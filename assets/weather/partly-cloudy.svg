@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img">
+  <defs>
+    <radialGradient id="partSun" cx="50%" cy="45%" r="55%">
+      <stop offset="0" stop-color="#ffed9d"/>
+      <stop offset="1" stop-color="#eca442"/>
+    </radialGradient>
+    <linearGradient id="partCloud" x1="22" x2="76" y1="44" y2="74">
+      <stop stop-color="#fffdf4"/>
+      <stop offset="1" stop-color="#dce9cf"/>
+    </linearGradient>
+  </defs>
+  <circle cx="35" cy="35" r="21" fill="url(#partSun)"/>
+  <g fill="none" stroke="#d89033" stroke-linecap="round" stroke-width="4">
+    <path d="M35 8v9M35 53v8M8 35h9M53 35h8"/>
+    <path d="M16 16l6 6M54 16l-6 6"/>
+  </g>
+  <path d="M28 67c-8 0-14-5-14-12 0-8 7-13 15-12 4-9 14-14 24-10 8 3 12 10 12 18 9 0 16 5 16 13s-7 14-17 14H29c-1 0-1 0-1-11Z" fill="url(#partCloud)" stroke="#bfd5ad" stroke-width="2"/>
+  <path d="M31 52c8-8 23-8 31 2" fill="none" stroke="#ffffff" stroke-linecap="round" stroke-width="5" opacity=".75"/>
+</svg>
