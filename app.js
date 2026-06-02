@@ -190,6 +190,59 @@ const crops = [
 
 const generatedCropIconIds = new Set([]);
 
+const cropSearchAliases = {
+  "mini-tomato": ["みにとまと", "ミニトマト", "プチトマト", "ぷちとまと", "小型トマト", "こがたとまと"],
+  tomato: ["とまと", "トマト", "蕃茄", "赤茄子", "あかなす"],
+  eggplant: ["なす", "ナス", "茄子", "なすび", "ナスビ"],
+  pepper: ["ぴーまん", "ピーマン", "青椒", "あおとうがらし", "青唐辛子"],
+  cucumber: ["きゅうり", "キュウリ", "胡瓜", "きうり"],
+  okra: ["おくら", "オクラ", "陸蓮根", "おかれんこん"],
+  edamame: ["えだまめ", "エダマメ", "枝豆"],
+  "snap-bean": ["いんげん", "インゲン", "隠元", "いんげんまめ", "インゲンマメ", "さやいんげん"],
+  pea: ["えんどう", "エンドウ", "豌豆", "えんどうまめ", "エンドウマメ", "さやえんどう"],
+  potato: ["じゃがいも", "ジャガイモ", "馬鈴薯", "ばれいしょ", "ジャガ芋"],
+  "sweet-potato": ["さつまいも", "サツマイモ", "薩摩芋", "甘藷", "かんしょ"],
+  daikon: ["だいこん", "ダイコン", "大根"],
+  turnip: ["かぶ", "カブ", "蕪"],
+  carrot: ["にんじん", "ニンジン", "人参"],
+  komatsuna: ["こまつな", "コマツナ", "小松菜"],
+  spinach: ["ほうれんそう", "ホウレンソウ", "ほうれん草", "菠薐草"],
+  lettuce: ["れたす", "レタス", "萵苣", "ちしゃ", "チシャ"],
+  cabbage: ["きゃべつ", "キャベツ", "甘藍", "かんらん"],
+  broccoli: ["ぶろっこりー", "ブロッコリー", "緑花椰菜"],
+  "welsh-onion": ["ねぎ", "ネギ", "葱", "長ネギ", "ながねぎ"],
+  shiso: ["しそ", "シソ", "紫蘇", "大葉", "おおば"],
+  basil: ["ばじる", "バジル"],
+  garlic: ["にんにく", "ニンニク", "大蒜"],
+  onion: ["たまねぎ", "タマネギ", "玉ねぎ", "玉葱"],
+  zucchini: ["ずっきーに", "ズッキーニ", "つるなしかぼちゃ"],
+  pumpkin: ["かぼちゃ", "カボチャ", "南瓜"],
+  "bitter-melon": ["ごーや", "ゴーヤ", "にがうり", "ニガウリ", "苦瓜"],
+  watermelon: ["すいか", "スイカ", "西瓜"],
+  melon: ["めろん", "メロン", "甜瓜"],
+  corn: ["とうもろこし", "トウモロコシ", "玉蜀黍", "とうきび", "コーン"],
+  hakusai: ["はくさい", "ハクサイ", "白菜"],
+  mizuna: ["みずな", "ミズナ", "水菜", "京菜"],
+  mibuna: ["みぶな", "ミブナ", "壬生菜"],
+  shungiku: ["しゅんぎく", "シュンギク", "春菊", "菊菜"],
+  chingensai: ["ちんげんさい", "チンゲンサイ", "青梗菜"],
+  celery: ["せろり", "セロリ", "塘蒿"],
+  parsley: ["ぱせり", "パセリ", "和蘭芹"],
+  asparagus: ["あすぱらがす", "アスパラガス", "アスパラ", "竜髭菜"],
+  strawberry: ["いちご", "イチゴ", "苺"],
+  "fava-bean": ["そらまめ", "ソラマメ", "空豆", "蚕豆"],
+  peanut: ["らっかせい", "ラッカセイ", "落花生", "ピーナッツ"],
+  satoimo: ["さといも", "サトイモ", "里芋"],
+  ginger: ["しょうが", "ショウガ", "生姜"],
+  nagaimo: ["ながいも", "ナガイモ", "長芋"],
+  chive: ["にら", "ニラ", "韮"],
+  myoga: ["みょうが", "ミョウガ", "茗荷"],
+  rakkyo: ["らっきょう", "ラッキョウ", "辣韮"],
+  "chili-pepper": ["とうがらし", "トウガラシ", "唐辛子", "鷹の爪", "たかのつめ"],
+  paprika: ["ぱぷりか", "パプリカ"],
+  burdock: ["ごぼう", "ゴボウ", "牛蒡"]
+};
+
 const defaultState = {
   onboarded: false,
   view: "home",
@@ -345,6 +398,11 @@ function loadState() {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
     if (!saved) return defaultState;
     const migrated = { ...defaultState, ...saved, form: { ...defaultState.form, ...(saved.form || {}) } };
+    const sampleOnly = migrated.crops?.length === 1 && migrated.crops[0].masterId === "mini-tomato" && migrated.crops[0].note === "確認用のサンプル作物";
+    if (sampleOnly) {
+      migrated.crops = [];
+      migrated.selectedCropId = null;
+    }
     const legacy = { "tokyo-setagaya": ["東京都", "東京23区"], nagano: ["長野県", "長野市"], nasu: ["栃木県", "那須町"], osaka: ["大阪府", "大阪市"] };
     if (legacy[saved.regionId] && (!saved.prefecture || !saved.city)) {
       migrated.prefecture = legacy[saved.regionId][0];
@@ -375,6 +433,42 @@ function selectCropAndFocus(cropId) {
     detail.scrollIntoView({ behavior: "smooth", block: "start" });
     detail.focus({ preventScroll: true });
   });
+}
+
+function normalizeSearchText(text) {
+  return String(text || "")
+    .normalize("NFKC")
+    .replace(/[ 　・ー\-_/]/g, "")
+    .toLowerCase()
+    .replace(/[\u3041-\u3096]/g, (char) => String.fromCharCode(char.charCodeAt(0) + 0x60));
+}
+
+function cropSearchScore(item, query) {
+  const normalized = normalizeSearchText(query);
+  if (!normalized) return 1;
+  const nameTerms = [item.name].map(normalizeSearchText);
+  const aliasTerms = (cropSearchAliases[item.id] || []).map(normalizeSearchText);
+  const supportTerms = [item.family, item.category, item.difficulty].map(normalizeSearchText);
+  if (nameTerms.some((term) => term === normalized)) return 120;
+  if (nameTerms.some((term) => term.startsWith(normalized))) return 90;
+  if (normalized.length === 1) return 0;
+  if (aliasTerms.some((term) => term === normalized)) return 105;
+  if (aliasTerms.some((term) => term.startsWith(normalized))) return 70;
+  if (nameTerms.some((term) => term.includes(normalized))) return 55;
+  if (aliasTerms.some((term) => term.includes(normalized))) return 45;
+  if (normalized.length >= 2 && supportTerms.some((term) => term.includes(normalized))) return 25;
+  return 0;
+}
+
+function getCropSearchResults(query, category = "すべて") {
+  return crops
+    .map((item, index) => ({ item, index, score: cropSearchScore(item, query) }))
+    .filter(({ item, score }) => {
+      const matchCategory = category === "すべて" || item.category === category;
+      return matchCategory && (!normalizeSearchText(query) || score > 0);
+    })
+    .sort((a, b) => b.score - a.score || a.index - b.index)
+    .map(({ item }) => item);
 }
 
 function showToast(message) {
@@ -471,16 +565,7 @@ function renderOnboarding() {
 }
 
 function finishOnboarding() {
-  const sample = {
-    id: crypto.randomUUID(),
-    masterId: "mini-tomato",
-    place: state.locationType,
-    sowDate: iso(addDays(today, -18)),
-    plantingDate: iso(addDays(today, -7)),
-    status: "苗を植えた",
-    note: "確認用のサンプル作物"
-  };
-  setState({ onboarded: true, crops: state.crops.length ? state.crops : [sample], selectedCropId: sample.id });
+  setState({ onboarded: true, crops: state.crops, selectedCropId: state.crops[0]?.id || null, view: "home" });
 }
 
 function renderSidebar() {
@@ -571,10 +656,10 @@ function renderHome() {
   const alerts = state.premium ? getWeatherAlerts() : [];
   return h("div", { class: "grid dashboard-grid" }, [
     h("section", { class: "grid" }, [
+      !state.crops.length ? firstGardenSetupCard() : null,
       h("div", { class: "panel focus-panel" }, [
         h("div", { class: "panel-header" }, [h("h3", { text: "今日やること" }), h("span", { class: "badge blue", text: `${todayTasks.length}件` })]),
-        taskList(todayTasks.length ? todayTasks : weekTasks.slice(0, 3), todayTasks.length ? "today" : "week"),
-        !state.crops.length ? quickStartCrops() : null
+        taskList(todayTasks.length ? todayTasks : weekTasks.slice(0, 3), todayTasks.length ? "today" : "week")
       ]),
       h("div", { class: "panel hero" }, [
         h("div", { class: "hero-copy" }, [
@@ -612,12 +697,12 @@ function renderCrops() {
   return h("div", { class: "grid dashboard-grid" }, [
     h("section", { class: "panel" }, [
       h("div", { class: "panel-header" }, [h("h3", { text: "栽培中の作物" }), h("span", { class: "badge green", text: `${state.crops.length}件` })]),
-      state.crops.length ? h("div", { class: "crop-list" }, state.crops.map((item) => renderCropCard(item, selected?.id))) : empty("まだ登録がありません。作物を追加してください。"),
+      state.crops.length ? h("div", { class: "crop-list" }, state.crops.map((item) => renderCropCard(item, selected?.id))) : emptyAction("まだ登録がありません。育てている野菜、またはこれから育てたい野菜を1つ登録してみましょう。", "作物を追加する", () => openCropModal()),
       h("h3", { class: "section-title", text: "栽培履歴" }),
       state.history.length ? h("div", { class: "history-list" }, state.history.map(renderHistoryRow)) : empty("栽培終了した作物がここに保存されます。")
     ]),
     h("section", { id: "crop-detail-panel", class: "panel crop-detail-panel", tabindex: "-1", "aria-live": "polite" }, [
-      selected ? renderCropDetail(selected) : empty("作物を選ぶと詳細が表示されます。")
+      selected ? renderCropDetail(selected) : emptyAction("作物を登録すると、ここに生育状況、次の作業、栽培メモが表示されます。", "最初の作物を選ぶ", () => openCropModal())
     ])
   ]);
 }
@@ -871,6 +956,24 @@ function renderRecommendCard(item) {
   ]);
 }
 
+function firstGardenSetupCard() {
+  const ids = ["mini-tomato", "cucumber", "komatsuna"];
+  return h("div", { class: "panel first-setup-card" }, [
+    h("div", { class: "first-setup-copy" }, [
+      h("span", { class: "badge green", text: "最初の一歩" }),
+      h("h3", { text: "育てている野菜を登録してみましょう" }),
+      h("p", { class: "muted", text: "今育てている野菜、またはこれから育てたい野菜を1つ追加すると、作業予定と栽培メモを確認できるようになります。" })
+    ]),
+    h("div", { class: "first-setup-actions" }, [
+      h("button", { class: "primary-btn", onclick: () => openCropModal() }, [uiIcon("plus"), "作物を追加する"]),
+      h("div", { class: "quick-actions", "aria-label": "おすすめ作物" }, ids.map((id) => {
+        const crop = getCrop(id);
+        return h("button", { class: "chip", onclick: () => startCropModal(id) }, [cropIcon(id, "inline-crop-icon"), crop.name]);
+      }))
+    ])
+  ]);
+}
+
 function quickStartCrops() {
   const ids = ["mini-tomato", "cucumber", "komatsuna"];
   return h("div", { class: "quick-start" }, [
@@ -880,6 +983,20 @@ function quickStartCrops() {
       return h("button", { class: "chip", onclick: () => startCropModal(id) }, [cropIcon(id, "inline-crop-icon"), crop.name]);
     }))
   ]);
+}
+
+function renderCropSearchSuggestions(container, query, category, onPick) {
+  container.innerHTML = "";
+  if (!normalizeSearchText(query)) return;
+  const suggestions = getCropSearchResults(query, category).slice(0, 6);
+  if (!suggestions.length) return;
+  container.append(
+    h("span", { class: "suggestion-label", text: "検索候補" }),
+    h("div", { class: "suggestion-chips" }, suggestions.map((item) => h("button", {
+      class: "chip suggestion-chip",
+      onclick: () => onPick(item.id)
+    }, [cropIcon(item.id, "inline-crop-icon"), item.name])))
+  );
 }
 
 function premiumNudge(title, body) {
@@ -1069,20 +1186,28 @@ function renderCropModal(editingId = null) {
     renderStep();
   };
 
-  const rebuildPicker = (container) => {
+  const rebuildPicker = (container, suggestionsContainer = null) => {
     container.innerHTML = "";
-    const filtered = crops.filter((item) => {
-      const matchCategory = state.form.category === "すべて" || item.category === state.form.category;
-      const matchSearch = !state.form.search || item.name.includes(state.form.search) || item.family.includes(state.form.search);
-      return matchCategory && matchSearch;
+    if (suggestionsContainer) renderCropSearchSuggestions(suggestionsContainer, state.form.search, state.form.category, (id) => {
+      modalState.masterId = id;
+      state.form.selectedMasterId = id;
+      rebuildPicker(container, suggestionsContainer);
     });
+    const filtered = getCropSearchResults(state.form.search, state.form.category);
+    if (!filtered.length) {
+      container.append(emptyAction("一致する作物が見つかりませんでした。ひらがな、カタカナ、漢字名で検索できます。", "検索をクリア", () => {
+        state.form.search = "";
+        renderStep();
+      }));
+      return;
+    }
     filtered.forEach((item) => {
       container.append(h("button", {
         class: `crop-pick ${modalState.masterId === item.id ? "active" : ""}`,
         onclick: () => {
           modalState.masterId = item.id;
           state.form.selectedMasterId = item.id;
-          rebuildPicker(container);
+          rebuildPicker(container, suggestionsContainer);
         }
       }, [
         cropIcon(item.id, "crop-pick-icon"),
@@ -1105,22 +1230,24 @@ function renderCropModal(editingId = null) {
     body.append(stepDots());
     if (modalStep === 1) {
       const picker = h("div", { class: "crop-picker" });
+      const suggestions = h("div", { class: "search-suggestions" });
       body.append(
         h("div", { class: "form-grid" }, [
           inputField("検索", "text", state.form.search, (v) => {
             state.form.search = v;
-            rebuildPicker(picker);
+            rebuildPicker(picker, suggestions);
           }),
           selectField("カテゴリ", "modalCategory", state.form.category, categories.map((v) => [v, v]), (v) => {
             state.form.category = v;
-            rebuildPicker(picker);
+            rebuildPicker(picker, suggestions);
           })
         ]),
+        suggestions,
         h("h3", { class: "section-title", text: "育てる作物を選ぶ" }),
         picker,
         modalActions(root, null, () => goStep(2), "次へ")
       );
-      rebuildPicker(picker);
+      rebuildPicker(picker, suggestions);
       return;
     }
 
@@ -1459,8 +1586,10 @@ function getAllTasks() {
 function ensureOpenMeteoForecast() {
   if (!state.premium || typeof fetch !== "function") return;
   const location = getWeatherLocation();
+  const cacheStale = isWeatherCacheStale();
+  if (cacheStale) ensureWeatherCacheLoaded();
   const cached = getForecastFromWeatherCache(location);
-  if (cached) {
+  if (cached && !cacheStale) {
     if (state.weatherStatus !== "ready" || state.weatherLocationKey !== location.key || state.weatherForecast?.source !== "Open-Meteo Cache") {
       window.setTimeout(() => setState({
         weatherStatus: "ready",
@@ -1472,7 +1601,6 @@ function ensureOpenMeteoForecast() {
     }
     return;
   }
-  ensureWeatherCacheLoaded();
   const fresh = state.weatherForecast && state.weatherLocationKey === location.key && state.weatherFetchedAt && Date.now() - Date.parse(state.weatherFetchedAt) < 12 * 60 * 60 * 1000;
   if (fresh || weatherFetchInFlight === location.key || weatherCacheInFlight) return;
   weatherFetchInFlight = location.key;
@@ -1501,10 +1629,18 @@ function ensureOpenMeteoForecast() {
     });
 }
 
+function isWeatherCacheStale() {
+  if (!state.weatherCache) return true;
+  const stamp = Date.parse(state.weatherCache.generatedAt || state.weatherCacheFetchedAt || "");
+  if (!Number.isFinite(stamp)) return true;
+  return Date.now() - stamp > 6 * 60 * 60 * 1000;
+}
+
 function ensureWeatherCacheLoaded() {
-  if (state.weatherCache || weatherCacheInFlight || typeof fetch !== "function") return;
+  if ((!isWeatherCacheStale() && state.weatherCache) || weatherCacheInFlight || typeof fetch !== "function") return;
   weatherCacheInFlight = true;
-  fetch("./data/weather-cache.json?v=icon-fix-2", { cache: "no-cache" })
+  const cacheBucket = Math.floor(Date.now() / (30 * 60 * 1000));
+  fetch(`./data/weather-cache.json?v=${cacheBucket}`, { cache: "no-store" })
     .then((response) => {
       if (!response.ok) throw new Error(`weather-cache ${response.status}`);
       return response.json();

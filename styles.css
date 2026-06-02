@@ -1160,6 +1160,60 @@ textarea {
   gap: 7px;
 }
 
+.search-suggestions {
+  display: grid;
+  gap: 8px;
+  min-height: 0;
+}
+
+.suggestion-label {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.suggestion-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.suggestion-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.first-setup-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  border-color: #b8d69b;
+  background:
+    linear-gradient(135deg, rgba(125, 183, 92, 0.17), rgba(255, 253, 245, 0.88)),
+    #fffdf5;
+}
+
+.first-setup-copy {
+  display: grid;
+  gap: 8px;
+}
+
+.first-setup-copy h3 {
+  font-size: 22px;
+}
+
+.first-setup-copy p {
+  margin: 0;
+}
+
+.first-setup-actions {
+  display: grid;
+  gap: 10px;
+  justify-items: end;
+}
+
 .feedback-form {
   align-items: end;
 }
@@ -1295,6 +1349,7 @@ textarea {
 
   .topbar,
   .hero,
+  .first-setup-card,
   .dashboard-grid,
   .onboarding-card {
     grid-template-columns: 1fr;
@@ -1306,6 +1361,10 @@ textarea {
 
   .top-actions {
     justify-content: flex-start;
+  }
+
+  .first-setup-actions {
+    justify-items: stretch;
   }
 
   .form-grid {
