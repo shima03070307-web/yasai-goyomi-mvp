@@ -307,6 +307,18 @@ button {
   font-size: 17px;
 }
 
+.section-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 18px 0 10px;
+}
+
+.section-title-row .section-title {
+  margin: 0;
+}
+
 .hero {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 220px;
