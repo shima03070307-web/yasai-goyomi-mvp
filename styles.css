@@ -1067,6 +1067,45 @@ textarea {
   font-weight: 900;
 }
 
+.aftercrop-note {
+  margin: -2px 0 10px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.advice-points {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.advice-points.compact {
+  margin-top: 7px;
+}
+
+.advice-point {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #f2f7e9;
+  border: 1px solid #d8e6c7;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.advice-point b {
+  color: var(--green-dark);
+  font-size: 11px;
+}
+
 .timeline-item {
   position: relative;
   padding-left: 42px;

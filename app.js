@@ -278,6 +278,7 @@ const defaultState = {
 let state = loadState();
 let weatherFetchInFlight = "";
 let weatherCacheInFlight = false;
+let weatherCacheAttemptBucket = "";
 
 const seasonVisuals = {
   earlySpring: { name: "初春", file: "early-spring.png" },
@@ -496,6 +497,7 @@ function h(tag, attrs = {}, children = []) {
 
 function render() {
   const app = document.querySelector("#app");
+  cleanupBrokenModalBackdrops();
   app.innerHTML = "";
   if (!state.onboarded) {
     app.append(renderOnboarding());
@@ -511,6 +513,18 @@ function render() {
       state.toast ? h("div", { class: "toast", role: "status", text: state.toast }) : null
     ])
   );
+}
+
+function cleanupBrokenModalBackdrops() {
+  document.querySelectorAll(".modal-backdrop").forEach((backdrop) => {
+    const modal = backdrop.querySelector(".modal");
+    if (!modal) {
+      backdrop.remove();
+      return;
+    }
+    const rect = modal.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) backdrop.remove();
+  });
 }
 
 function seasonalGardenVisual(date = today) {
@@ -747,7 +761,8 @@ function renderCropDetail(item) {
   const master = getCrop(item.masterId);
   const tasks = tasksForCrop(item);
   const future = tasks.filter((t) => parseDate(t.date) >= today);
-  const after = getAfterCropSuggestions(master);
+  const after = getAfterCropSuggestions(item);
+  const finishDate = getCropFinishDate(item);
   return h("div", {}, [
     h("div", { class: "panel-header" }, [
       h("div", {}, [
@@ -766,8 +781,12 @@ function renderCropDetail(item) {
     taskList(future.slice(0, 3), "detail"),
     h("h3", { class: "section-title", text: "作業タイムライン" }),
     h("div", { class: "timeline" }, tasks.map((task) => renderTimelineItem(task))),
-    h("h3", { class: "section-title", text: "後作候補" }),
-    h("div", { class: "recommend-list" }, after.slice(0, 3).map((candidate) => renderAfterCropCard(master, candidate))),
+    h("div", { class: "section-title-row" }, [
+      h("h3", { class: "section-title", text: "後作候補（終了予定月から判定）" }),
+      h("span", { class: "badge amber", text: `${formatDate(iso(finishDate))}頃から` })
+    ]),
+    afterCropNote(master),
+    h("div", { class: "recommend-list" }, after.slice(0, 3).map((suggestion) => renderAfterCropCard(master, suggestion))),
     h("div", { class: "actions" }, [
       h("button", { class: "secondary-btn", onclick: () => editCrop(item.id) }, ["編集"]),
       h("button", { class: "secondary-btn", onclick: () => finishCrop(item.id) }, ["栽培終了"]),
@@ -811,15 +830,23 @@ function renderTimelineItem(task) {
   ]);
 }
 
-function renderAfterCropCard(previous, candidate) {
+function renderAfterCropCard(previous, suggestion) {
+  const candidate = suggestion.crop || suggestion;
   return h("div", { class: "recommend-card" }, [
     cropIcon(candidate.id),
     h("div", {}, [
       h("strong", { text: candidate.name }),
-      h("p", { text: `${previous.name}と異なる${candidate.family}。${formatMonth(today)}の一般的な作付け目安でも候補にできます。` })
+      h("p", { text: suggestion.reason || `${previous.name}と違う${candidate.family}に替え、連作の負担を分散できます。` })
     ]),
-    h("span", { class: "badge green", text: "後作候補" })
+    h("span", { class: "badge green", text: suggestion.badge || "後作候補" })
   ]);
+}
+
+function afterCropNote(previous) {
+  return h("p", {
+    class: "aftercrop-note",
+    text: `${previous.name}と同じ${previous.family}を避け、片付け予定月から作りやすい候補を優先しています。`
+  });
 }
 
 function renderHistoryRow(item) {
@@ -923,7 +950,7 @@ function renderAlerts() {
   const alerts = getWeatherAlerts();
   const recs = getRecommendations();
   const selected = state.crops.find((item) => item.id === state.selectedCropId) || state.crops[0];
-  const after = selected ? getAfterCropSuggestions(getCrop(selected.masterId)) : [];
+  const after = selected ? getAfterCropSuggestions(selected) : [];
   return h("div", { class: "grid dashboard-grid" }, [
     h("section", { class: "grid" }, [
       h("div", { class: "panel" }, [
@@ -934,8 +961,14 @@ function renderAlerts() {
         alertDayGroups(alerts)
       ]),
       h("div", { class: "panel" }, [
-        h("div", { class: "panel-header" }, [h("h3", { text: "後作提案" }), selected ? h("span", { class: "badge violet", text: getCrop(selected.masterId).name }) : null]),
-        selected ? h("div", { class: "recommend-list" }, after.slice(0, 5).map((candidate) => renderAfterCropCard(getCrop(selected.masterId), candidate))) : empty("作物を登録すると、同じ場所に次に植えやすい候補を表示します。")
+        h("div", { class: "panel-header" }, [
+          h("h3", { text: "後作提案" }),
+          selected ? h("span", { class: "badge violet", text: `${getCrop(selected.masterId).name} / ${formatMonth(getCropFinishDate(selected))}以降` }) : null
+        ]),
+        selected ? h("div", {}, [
+          afterCropNote(getCrop(selected.masterId)),
+          h("div", { class: "recommend-list" }, after.slice(0, 5).map((suggestion) => renderAfterCropCard(getCrop(selected.masterId), suggestion)))
+        ]) : empty("作物を登録すると、同じ場所に次に植えやすい候補を表示します。")
       ])
     ]),
     h("section", { class: "panel" }, [
@@ -950,7 +983,10 @@ function renderRecommendCard(item) {
     cropIcon(item.crop.id),
     h("div", {}, [
       h("strong", { text: item.crop.name }),
-      h("p", { text: item.reason })
+      h("p", { text: item.reason }),
+      item.note ? h("div", { class: "advice-points compact" }, [
+        h("span", { class: "advice-point", text: item.note })
+      ]) : null
     ]),
     h("div", { class: "recommend-score", text: String(item.score) })
   ]);
@@ -1170,7 +1206,13 @@ function renderCropModal(editingId = null) {
   };
   const modalState = { ...initial };
   let modalStep = editing ? 2 : 1;
-  const root = h("div", { class: "modal-backdrop" });
+  document.querySelectorAll(".modal-backdrop").forEach((backdrop) => backdrop.remove());
+  const root = h("div", {
+    class: "modal-backdrop",
+    onclick: (event) => {
+      if (event.target === root) root.remove();
+    }
+  });
   const categories = ["すべて", ...new Set(crops.map((item) => item.category))];
   const body = h("div", { class: "modal-body" });
 
@@ -1220,7 +1262,7 @@ function renderCropModal(editingId = null) {
   const modal = h("div", { class: "modal" }, [
     h("div", { class: "modal-head" }, [
       h("h3", { text: editing ? "作物を編集" : "作物を追加" }),
-      h("button", { class: "icon-btn", title: "閉じる", onclick: () => root.remove() }, ["×"])
+      h("button", { class: "icon-btn modal-close", type: "button", "aria-label": "閉じる", title: "閉じる", onclick: () => root.remove() }, ["×"])
     ]),
     body
   ]);
@@ -1631,15 +1673,26 @@ function ensureOpenMeteoForecast() {
 
 function isWeatherCacheStale() {
   if (!state.weatherCache) return true;
+  if (!weatherCacheHasUsableDays(state.weatherCache)) return true;
+  const fetchedStamp = Date.parse(state.weatherCacheFetchedAt || "");
+  if (Number.isFinite(fetchedStamp) && Date.now() - fetchedStamp < 6 * 60 * 60 * 1000) return false;
   const stamp = Date.parse(state.weatherCache.generatedAt || state.weatherCacheFetchedAt || "");
   if (!Number.isFinite(stamp)) return true;
   return Date.now() - stamp > 6 * 60 * 60 * 1000;
 }
 
+function weatherCacheHasUsableDays(cache) {
+  return Object.values(cache?.points || {}).some((point) =>
+    (point.days || []).some((day) => daysBetween(today, parseDate(day.date)) >= 0)
+  );
+}
+
 function ensureWeatherCacheLoaded() {
   if ((!isWeatherCacheStale() && state.weatherCache) || weatherCacheInFlight || typeof fetch !== "function") return;
-  weatherCacheInFlight = true;
   const cacheBucket = Math.floor(Date.now() / (30 * 60 * 1000));
+  if (weatherCacheAttemptBucket === String(cacheBucket)) return;
+  weatherCacheAttemptBucket = String(cacheBucket);
+  weatherCacheInFlight = true;
   fetch(`./data/weather-cache.json?v=${cacheBucket}`, { cache: "no-store" })
     .then((response) => {
       if (!response.ok) throw new Error(`weather-cache ${response.status}`);
@@ -1988,9 +2041,8 @@ function getRecommendations() {
     if (region.tags.includes("hot_summer") && item.category === "葉菜類" && [7, 8].includes(month)) score -= 20;
     if (region.tags.includes("short_growing_season") && item.harvestDays[1] > 130) score -= 12;
     if (region.tags.includes("coastal_mild") && ["ヒガンバナ科", "アブラナ科"].includes(item.family)) score += 4;
-    const windowText = seedFit ? "地域補正後の種まき候補" : plantingFit ? "地域補正後の定植候補" : "次の候補";
-    const reason = `${region.climateZoneName}の${formatMonth(today)}では${windowText}。${item.difficulty}で${item.weeklyCareLevel}、${region.beginnerMessage}`;
-    return { crop: item, score: Math.max(1, Math.min(99, score)), reason };
+    const copy = recommendationCopy(item, month, seedFit, plantingFit, region);
+    return { crop: item, score: Math.max(1, Math.min(99, score)), ...copy };
   }).sort((a, b) => b.score - a.score);
 }
 
@@ -2003,27 +2055,180 @@ function getBasicRecommendations() {
     if (seedFit || plantingFit) score += 25;
     if (item.beginnerFriendly) score += 10;
     if (item.weeklyCareLevel === "週1回") score += 8;
-    const windowText = seedFit ? "種まき候補" : plantingFit ? "定植候補" : "次の候補";
-    const reason = `${formatMonth(today)}の一般的な${windowText}。地域・環境による補正は有料デモで利用できます。`;
-    return { crop: item, score: Math.max(1, Math.min(99, score)), reason };
+    const copy = recommendationCopy(item, month, seedFit, plantingFit, null);
+    return { crop: item, score: Math.max(1, Math.min(99, score)), ...copy };
   }).sort((a, b) => b.score - a.score);
 }
 
-function getAfterCropSuggestions(previous) {
-  const month = today.getMonth() + 1;
+function recommendationCopy(item, month, seedFit, plantingFit, region) {
+  const timing = seedFit && plantingFit ? "種まき・苗植え" : seedFit ? "種まき" : plantingFit ? "苗植え" : "準備";
+  const locationPrefix = region ? `${region.climateZoneName}の${formatMonth(today)}では` : `${formatMonth(today)}は`;
+  const lead = seedFit || plantingFit
+    ? `${locationPrefix}${timing}の候補です。`
+    : `${locationPrefix}次の適期に向けた候補です。`;
+  return {
+    reason: `${lead}${cropMeritText(item)}`,
+    note: cropCareNote(item, region, month)
+  };
+}
+
+function cropMeritText(item) {
+  const specific = {
+    okra: "暑さに強く、収穫が始まるとこまめに採れるので夏の菜園に向きます。",
+    edamame: "収穫時期がわかりやすく、短い期間で食卓に乗せやすい作物です。",
+    "sweet-potato": "つるが伸びれば管理が比較的少なく、初心者でも成果を感じやすい作物です。",
+    shiso: "少量ずつ長く収穫でき、家庭菜園の満足感が出やすい作物です。",
+    cucumber: "生育が早く、支柱と水切れ対策を押さえると収穫につながりやすい作物です。",
+    "mini-tomato": "毎日の変化が見えやすく、支柱・わき芽・水管理の練習に向きます。",
+    basil: "摘み取りながら長く使え、少ない株数でも料理に活かしやすいハーブです。",
+    pumpkin: "場所は取りますが、つるの伸び方や着果を観察する楽しみが大きい作物です。",
+    corn: "生育の勢いが見えやすく、受粉から収穫までの流れを学びやすい作物です。",
+    peanut: "花後に地中で実が育つため、ほかの野菜と違う変化を楽しめます。",
+    komatsuna: "短期間で収穫しやすく、空いた畝を使いやすい葉菜です。",
+    turnip: "小カブなら栽培期間が短く、秋冬の一品にしやすい根菜です。",
+    daikon: "秋まきの代表的な根菜で、土づくりの成果が形に出やすい作物です。",
+    spinach: "涼しい時期に育てやすく、寒さに当たると味がのりやすい葉菜です。"
+  };
+  if (specific[item.id]) return specific[item.id];
+  if (item.category === "葉菜類") return "間引きと防虫を早めに行えば、短い期間で育てやすい作物です。";
+  if (item.category === "根菜類") return "土をよくほぐしてからまくと、根の太りを観察しながら育てられます。";
+  if (item.category === "豆類") return "肥料を控えめにし、花やさやの様子を見ながら育てる練習になります。";
+  if (item.category === "果菜類") return "支柱や水管理は必要ですが、収穫の楽しみが続きやすい作物です。";
+  if (item.family === "ヒガンバナ科") return "植え付け後の管理が安定しやすく、長めの栽培計画を立てやすい作物です。";
+  return `${item.difficulty === "やさしい" ? "初心者でも扱いやすく" : `難度は${item.difficulty}で`}、${item.weeklyCareLevel}程度の管理が目安です。`;
+}
+
+function cropCareNote(item, region, month) {
+  const specific = {
+    okra: "実が大きくなりすぎると硬くなるため、収穫期はこまめに見ます。",
+    edamame: "花が咲いてから実が太る時期は、水切れとカメムシに注意します。",
+    "sweet-potato": "肥料を入れすぎると葉ばかり茂るため、元肥は控えめにします。",
+    shiso: "葉を長く使うなら、花穂が出る前に摘み取りながら育てます。",
+    basil: "摘心して枝数を増やし、雨後は蒸れないよう風通しを見ます。",
+    pumpkin: "雌花が咲いたら人工受粉を意識し、株元の泥はねを抑えます。",
+    corn: "受粉期の水切れと、鳥・虫による食害を早めに確認します。",
+    peanut: "花後に子房柄が土へ入るので、株元を固めすぎないようにします。"
+  };
+  if (specific[item.id]) return specific[item.id];
+  if (item.family === "アブラナ科") return "虫がつきやすいので、種まき直後から防虫ネットを準備すると安心です。";
+  if (item.category === "根菜類") return "石や未熟な堆肥を避け、まっすぐ根が伸びる畝を作ります。";
+  if (item.supportRequired) return "風で倒れやすい時期は、支柱・誘引を早めに確認します。";
+  if (region?.tags.includes("hot_summer") && month >= 6 && month <= 9) return "暑い地域では朝の水やりと土の乾き確認を優先します。";
+  if (region?.tags.includes("rainy_humid") || region?.tags.includes("typhoon_risk")) return "雨前は泥はねと排水、風前は固定を確認します。";
+  if (item.family === "ヒガンバナ科") return "酸性に傾きすぎないよう、植え付け前の土づくりを早めに済ませます。";
+  return "日当たり、水はけ、株間を先に整えると失敗を減らせます。";
+}
+
+function getAfterCropSuggestions(item) {
+  const previous = getCrop(item.masterId || item.id);
+  const finishDate = getCropFinishDate(item);
+  const finishMonth = finishDate.getMonth() + 1;
   return crops
     .filter((candidate) => candidate.id !== previous.id)
+    .filter((candidate) => candidate.family !== previous.family)
     .filter((candidate) => !previous.avoidNextFamilies.includes(candidate.family))
-    .map((candidate) => {
-      let score = 0;
-      if (previous.recommendedNextFamilies.includes(candidate.family)) score += 20;
-      if (candidate.seedMonths.includes(month) || candidate.plantingMonths.includes(month)) score += 20;
-      if (candidate.beginnerFriendly) score += 10;
-      if (candidate.weeklyCareLevel === "週1回") score += 8;
-      return { candidate, score };
-    })
-    .sort((a, b) => b.score - a.score)
-    .map((entry) => entry.candidate);
+    .map((candidate) => scoreAfterCropCandidate(previous, candidate, finishDate, finishMonth))
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => b.score - a.score || a.crop.harvestDays[1] - b.crop.harvestDays[1])
+    .map(({ crop, reason, action, caution, timing, score, badge }) => ({ crop, reason, action, caution, timing, score, badge }));
+}
+
+function scoreAfterCropCandidate(previous, candidate, finishDate, finishMonth) {
+  const monthScores = afterCropTimingScore(candidate, finishMonth);
+  let score = monthScores.score;
+  if (!score) return { crop: candidate, score: 0, reason: "", timing: "" };
+  if (previous.recommendedNextFamilies.includes(candidate.family)) score += 18;
+  if (candidate.beginnerFriendly) score += 10;
+  if (candidate.weeklyCareLevel === "週1回") score += 6;
+  if (candidate.harvestDays[1] <= 90) score += 8;
+  if (["葉菜類", "根菜類"].includes(candidate.category)) score += 5;
+  if (previous.category === "果菜類" && candidate.category === "根菜類") score += 9;
+  if (previous.category === "果菜類" && candidate.category === "葉菜類" && candidate.harvestDays[1] <= 65) score += 5;
+  if (finishMonth >= 9 && finishMonth <= 11 && overwinterCropIds().has(candidate.id)) score += 6;
+  if (finishMonth >= 10 && candidate.harvestDays[1] > 160 && !overwinterCropIds().has(candidate.id)) score -= 18;
+
+  const copy = afterCropAdviceCopy(previous, candidate, finishDate, monthScores);
+  return {
+    crop: candidate,
+    score: Math.max(1, score),
+    ...copy,
+    badge: `${monthScores.month || finishMonth}月以降`
+  };
+}
+
+function afterCropTimingScore(candidate, finishMonth) {
+  const nextMonth = wrapMonth(finishMonth + 1);
+  const secondMonth = wrapMonth(finishMonth + 2);
+  const months = [...new Set([...candidate.seedMonths, ...candidate.plantingMonths])];
+  if (months.includes(finishMonth)) return { score: 45, month: finishMonth, stage: "now" };
+  if (months.includes(nextMonth)) return { score: 38, month: nextMonth, stage: "next" };
+  if (months.includes(secondMonth)) return { score: 24, month: secondMonth, stage: "prepare" };
+  return { score: 0, label: "" };
+}
+
+function afterCropAdviceCopy(previous, candidate, finishDate, monthScores) {
+  const familyReason = previous.recommendedNextFamilies.includes(candidate.family)
+    ? `${previous.name}の後は${candidate.family}へ替えると、同じ科を続けない輪作にしやすいです。`
+    : `${previous.name}と違う${candidate.family}なので、同じ科を続けるより土の負担を分けられます。`;
+  return {
+    reason: `${familyReason}${afterCropMerit(candidate)}`,
+    action: afterCropAction(candidate, finishDate, monthScores),
+    caution: afterCropCaution(candidate)
+  };
+}
+
+function afterCropMerit(candidate) {
+  const specific = {
+    turnip: "小カブなら秋まきで生育が早く、夏野菜後の空き畝を長く空けずに使えます。",
+    daikon: "秋まきの代表で、深くほぐした畝を活かして根の太りを楽しめます。",
+    komatsuna: "短期間で収穫しやすく、初めての秋冬葉菜として取り入れやすい候補です。",
+    mizuna: "涼しくなる時期に育てやすく、少量ずつ収穫しやすい葉菜です。",
+    mibuna: "水菜に近い感覚で育てられ、鍋物や浅漬けにも使いやすい葉菜です。",
+    spinach: "涼しい時期ほど育てやすく、寒さに当たると味がのりやすい作物です。",
+    lettuce: "苗から始めると管理しやすく、秋の気温で葉がやわらかく育ちます。",
+    "chinese-cabbage": "秋の定植から冬の収穫へつなげやすく、畝を長めに使う計画に向きます。",
+    cabbage: "秋冬の定番で、苗から始めると収穫までの見通しを立てやすい作物です。",
+    broccoli: "苗から育てやすく、頂花蕾のあと側枝も楽しめる候補です。",
+    edamame: "栽培期間が比較的読みやすく、夏の片付け後でも短期収穫を狙いやすい豆類です。",
+    "snap-bean": "つるあり品種は支柱が必要ですが、短期間でさやの収穫を楽しみやすい豆類です。",
+    onion: "栽培期間は長めですが、秋の植え付けから翌年の収穫へ計画しやすい作物です。",
+    garlic: "秋に植えて冬越しさせるので、畝を長く使える場合に向きます。",
+    pea: "秋まきで冬越しし、春の収穫につなげる計画に向きます。",
+    "fava-bean": "秋まきで株を育て、春の収穫を待つ楽しみがあります。",
+    carrot: "涼しくなる時期の種まきに向き、土づくりの成果が見えやすい根菜です。"
+  };
+  if (specific[candidate.id]) return specific[candidate.id];
+  if (candidate.category === "葉菜類") return "葉菜は比較的結果が早く、片付け後の畝を使い切りやすい候補です。";
+  if (candidate.category === "根菜類") return "根菜は秋の涼しさを使いやすく、土を整えるほど育ち方が安定します。";
+  if (overwinterCropIds().has(candidate.id)) return "冬越し前提で、秋から翌季へ畑の計画をつなげられます。";
+  return `${candidate.difficulty === "やさしい" ? "扱いやすく" : `難度は${candidate.difficulty}で`}、次の栽培計画に組み込みやすい候補です。`;
+}
+
+function afterCropAction(candidate, finishDate, monthScores) {
+  const start = monthScores.stage === "now"
+    ? `${formatMonth(finishDate)}の片付け後すぐ`
+    : `${monthScores.month}月に入る前`;
+  if (candidate.family === "アブラナ科") return `${start}に畝を整え、種まき直後から防虫ネットをかけます。`;
+  if (candidate.category === "根菜類") return `${start}に土を深めにほぐし、石や古い根を取り除いてからまきます。`;
+  if (overwinterCropIds().has(candidate.id)) return `${start}までに畝を準備し、冬越しできる株づくりを優先します。`;
+  if (candidate.family === "ヒガンバナ科") return `${start}までに酸度調整と元肥を済ませ、植え付け時期を逃さないようにします。`;
+  return `${start}に古い根を片付け、堆肥を入れて次の作付けに備えます。`;
+}
+
+function afterCropCaution(candidate) {
+  if (candidate.family === "アブラナ科") return "秋口は虫が残りやすいため、発芽直後の食害に注意します。";
+  if (candidate.category === "根菜類") return "未熟な堆肥や石が多いと根が割れたり曲がったりしやすくなります。";
+  if (overwinterCropIds().has(candidate.id)) return "収穫まで畝を長く使うため、次春までの場所取りを確認します。";
+  if (candidate.supportRequired) return "風の強い地域では早めに支柱や誘引を準備します。";
+  return "前作の残さを残しすぎず、病害虫の持ち越しを減らします。";
+}
+
+function overwinterCropIds() {
+  return new Set(["garlic", "onion", "pea", "fava-bean", "rakkyo", "strawberry"]);
+}
+
+function wrapMonth(month) {
+  return ((month - 1) % 12) + 1;
 }
 
 function getRegion() {
@@ -2103,10 +2308,19 @@ function needsHilling(master) {
 
 function calcProgress(item) {
   const master = getCrop(item.masterId);
-  const start = parseDate(item.plantingDate || item.sowDate || iso(today));
-  const end = addDays(start, master.harvestDays[1]);
+  const start = getCropStartDate(item);
+  const end = getCropFinishDate(item);
   const total = Math.max(1, daysBetween(start, end));
   return Math.max(4, Math.min(100, Math.round((daysBetween(start, today) / total) * 100)));
+}
+
+function getCropStartDate(item) {
+  return parseDate(item.plantingDate || item.sowDate || iso(today));
+}
+
+function getCropFinishDate(item) {
+  const master = getCrop(item.masterId || item.id);
+  return addDays(getCropStartDate(item), master.harvestDays[1]);
 }
 
 function greetingText() {
