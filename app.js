@@ -130,12 +130,6 @@ function cityMap(prefecture, city, regionGroupId, confidence, beginnerMessage, t
   return { prefecture, city, regionGroupId, confidence, beginnerMessage, tags };
 }
 
-const sourcePolicy = {
-  cropBase: "作物ごとの基本栽培はタキイ種苗の家庭菜園向け栽培マニュアルを主参考にしています。",
-  weather: "天気・気温・雨量・風速はOpen-Meteo予報とサーバー側キャッシュを利用します。地域補正は気象庁平年値や農研機構メッシュ農業気象データに置き換える前提のMVP分類です。",
-  general: "土づくり、連作、防虫ネットなどの一般原則はMAFFやJA系資料を監査用の補助ソースとして扱います。"
-};
-
 const crops = [
   crop("mini-tomato", "ミニトマト", "ナス科", "果菜類", "🍅", [3, 4, 5], [4, 5, 6], [18, 30], [15, 25], 10, 33, [90, 120], "中", true, false, 3, "週2回", ["ウリ科", "アブラナ科", "ヒガンバナ科"], ["ナス科"]),
   crop("tomato", "トマト", "ナス科", "果菜類", "🍅", [3, 4, 5], [4, 5, 6], [18, 30], [15, 25], 10, 33, [100, 130], "中", true, false, 3, "週2回", ["ウリ科", "アブラナ科"], ["ナス科"]),
@@ -186,10 +180,171 @@ const crops = [
   crop("rakkyo", "ラッキョウ", "ヒガンバナ科", "香味野菜", "🌿", [8, 9], [8, 9], [20, 25], [15, 25], 0, 30, [240, 280], "やさしい", false, false, 1, "週1回", ["ナス科", "ウリ科"], ["ヒガンバナ科"]),
   crop("chili-pepper", "トウガラシ", "ナス科", "果菜類", "🌶", [3, 4], [5, 6], [25, 30], [20, 30], 12, 35, [100, 130], "中", true, false, 3, "週2回", ["マメ科", "アブラナ科"], ["ナス科"]),
   crop("paprika", "パプリカ", "ナス科", "果菜類", "🫑", [3, 4], [5, 6], [25, 30], [20, 30], 12, 32, [110, 150], "中", true, false, 3, "週2回", ["マメ科", "アブラナ科"], ["ナス科"]),
+  crop("cauliflower", "カリフラワー", "アブラナ科", "葉菜類", "🥬", [2, 3, 7, 8], [3, 4, 8, 9], [20, 25], [15, 20], 5, 28, [85, 120], "中", false, true, 2, "週1回", ["マメ科", "ナス科"], ["アブラナ科"]),
+  crop("kohlrabi", "コールラビ", "アブラナ科", "根菜類", "🌿", [3, 4, 8, 9], [4, 5, 9, 10], [18, 25], [15, 20], 5, 28, [55, 75], "やさしい", false, true, 2, "週1回", ["マメ科", "ナス科"], ["アブラナ科"]),
+  crop("romanesco", "ロマネスコ", "アブラナ科", "葉菜類", "🥬", [7, 8], [8, 9], [20, 25], [15, 20], 5, 28, [100, 140], "中", false, true, 2, "週1回", ["マメ科", "ナス科"], ["アブラナ科"]),
+  crop("salad-na", "サラダ菜", "キク科", "葉菜類", "🥬", [3, 4, 5, 9, 10], [3, 4, 5, 9, 10], [15, 20], [15, 20], 5, 25, [35, 55], "やさしい", false, true, 1, "週1回", ["マメ科", "ナス科"], ["キク科"]),
+  crop("chima-sanchu", "チマサンチュ", "キク科", "葉菜類", "🥬", [3, 4, 5, 8, 9, 10], [4, 5, 9, 10], [15, 20], [15, 22], 5, 28, [45, 70], "やさしい", false, true, 1, "週1回", ["マメ科", "ナス科"], ["キク科"]),
+  crop("mustard-greens", "カラシナ", "アブラナ科", "葉菜類", "🥬", [3, 4, 9, 10], [3, 4, 9, 10], [15, 25], [15, 22], 5, 28, [35, 60], "やさしい", false, true, 2, "週1回", ["マメ科", "ナス科"], ["アブラナ科"]),
+  crop("nabana", "ナバナ", "アブラナ科", "葉菜類", "🌿", [9, 10], [10, 11], [15, 25], [10, 20], 0, 25, [100, 150], "中", false, true, 2, "週1回", ["マメ科", "ナス科"], ["アブラナ科"]),
+  crop("beets", "ビーツ", "ヒユ科", "根菜類", "🌿", [3, 4, 9, 10], [3, 4, 9, 10], [15, 25], [15, 21], 5, 28, [60, 90], "中", false, false, 1, "週1回", ["ナス科", "ウリ科"], ["ヒユ科"]),
+  crop("swiss-chard", "フダンナ", "ヒユ科", "葉菜類", "🥬", [3, 4, 5, 9, 10], [3, 4, 5, 9, 10], [20, 25], [15, 25], 5, 32, [45, 75], "やさしい", false, false, 1, "週1回", ["ナス科", "ウリ科"], ["ヒユ科"]),
+  crop("mitsuba", "ミツバ", "セリ科", "香味野菜", "🌿", [3, 4, 9], [4, 5, 10], [15, 20], [15, 20], 3, 28, [60, 90], "中", false, true, 2, "週1回", ["アブラナ科", "マメ科"], ["セリ科"]),
+  crop("molokheiya", "モロヘイヤ", "アオイ科", "葉菜類", "🌿", [4, 5, 6], [5, 6, 7], [25, 30], [25, 30], 15, 35, [60, 90], "やさしい", false, false, 1, "週1回", ["アブラナ科", "ヒガンバナ科"], ["アオイ科"]),
+  crop("ensai", "エンサイ", "ヒルガオ科", "葉菜類", "🌿", [5, 6, 7], [5, 6, 7], [20, 30], [25, 30], 15, 35, [50, 80], "やさしい", false, false, 1, "週1回", ["アブラナ科", "マメ科"], ["ヒルガオ科"]),
+  crop("ice-plant", "アイスプラント", "ハマミズナ科", "葉菜類", "🌿", [3, 4, 9, 10], [4, 5, 10, 11], [15, 20], [5, 25], 3, 28, [70, 100], "中", false, true, 1, "週1回", ["マメ科", "ナス科"], ["ハマミズナ科"]),
+  crop("treviso", "トレビス", "キク科", "葉菜類", "🥬", [7, 8], [8, 9], [15, 25], [15, 20], 0, 28, [90, 130], "中", false, true, 1, "週1回", ["マメ科", "ナス科"], ["キク科"]),
+  crop("chijimina", "チヂミナ", "アブラナ科", "葉菜類", "🥬", [9, 10], [9, 10], [15, 25], [10, 20], 0, 25, [45, 70], "やさしい", false, true, 2, "週1回", ["マメ科", "ナス科"], ["アブラナ科"]),
   crop("burdock", "ゴボウ", "キク科", "根菜類", "🌿", [3, 4, 5, 9], [3, 4, 5, 9], [20, 25], [20, 25], 5, 30, [100, 150], "中", false, false, 2, "週1回", ["マメ科", "ナス科"], ["キク科"])
 ];
 
 const generatedCropIconIds = new Set([]);
+
+const harvestAfterPlantingDays = {
+  "mini-tomato": [45, 135],
+  tomato: [50, 135],
+  eggplant: [45, 150],
+  pepper: [45, 130],
+  "chili-pepper": [50, 135],
+  paprika: [60, 150],
+  cucumber: [35, 100],
+  okra: [45, 115],
+  zucchini: [35, 80],
+  pumpkin: [75, 120],
+  "bitter-melon": [60, 130],
+  watermelon: [75, 115],
+  melon: [75, 115],
+  corn: [70, 105],
+  lettuce: [35, 75],
+  cabbage: [60, 120],
+  broccoli: [65, 125],
+  cauliflower: [60, 90],
+  kohlrabi: [35, 55],
+  romanesco: [75, 105],
+  "salad-na": [25, 40],
+  "chima-sanchu": [30, 55],
+  nabana: [80, 120],
+  hakusai: [45, 90],
+  celery: [75, 135],
+  mitsuba: [45, 70],
+  molokheiya: [35, 70],
+  ensai: [35, 65],
+  "ice-plant": [45, 80],
+  treviso: [70, 100],
+  shiso: [35, 120],
+  basil: [30, 100],
+  parsley: [45, 120],
+  chive: [60, 120]
+};
+
+const plantingBaseCropIds = new Set([
+  ...Object.keys(harvestAfterPlantingDays),
+  "potato",
+  "sweet-potato",
+  "garlic",
+  "onion",
+  "strawberry",
+  "satoimo",
+  "ginger",
+  "nagaimo",
+  "myoga",
+  "rakkyo",
+  "welsh-onion",
+  "asparagus"
+]);
+
+const directSownOnlyCropIds = new Set([
+  "daikon",
+  "turnip",
+  "carrot",
+  "komatsuna",
+  "spinach",
+  "mizuna",
+  "mibuna",
+  "shungiku",
+  "chingensai",
+  "mustard-greens",
+  "beets",
+  "swiss-chard",
+  "chijimina",
+  "burdock",
+  "edamame",
+  "snap-bean",
+  "pea",
+  "fava-bean",
+  "peanut"
+]);
+
+const directSowPreferredCropIds = new Set([
+  ...directSownOnlyCropIds,
+  "corn",
+  "okra",
+  "cucumber",
+  "zucchini",
+  "pumpkin",
+  "bitter-melon",
+  "kohlrabi",
+  "salad-na",
+  "chima-sanchu",
+  "mitsuba",
+  "molokheiya",
+  "ensai",
+  "ice-plant"
+]);
+
+const nurseryPreferredCropIds = new Set([
+  ...Object.keys(harvestAfterPlantingDays),
+  "onion",
+  "strawberry",
+  "welsh-onion",
+  "asparagus"
+]);
+
+const plantingMaterialCropIds = new Set([
+  "potato",
+  "sweet-potato",
+  "garlic",
+  "satoimo",
+  "ginger",
+  "nagaimo",
+  "myoga",
+  "rakkyo"
+]);
+
+const startMethodDefinitions = {
+  planning: {
+    value: "planning",
+    status: "育てたい",
+    title: "これから育てたい",
+    body: "まだ始めていない作物。適期と始め方だけ先に確認します。"
+  },
+  direct: {
+    value: "direct",
+    status: "種まき済み",
+    title: "畑・プランターに直接まく",
+    body: "直播向きの作物。種まき日を基準に作業予定を作ります。"
+  },
+  nursery: {
+    value: "nursery",
+    status: "種まき済み",
+    title: "ポットにまいて育苗する",
+    body: "苗を育ててから植える作物。種まき日と定植日を分けて管理します。"
+  },
+  seedling: {
+    value: "seedling",
+    status: "苗を植えた",
+    title: "苗を植える",
+    body: "購入苗や育苗済みの苗を植えた日から予定を作ります。"
+  },
+  material: {
+    value: "material",
+    status: "苗を植えた",
+    title: "種イモ・球根などを植える",
+    body: "種イモ、球根、つる苗などを植えた日から予定を作ります。"
+  }
+};
+
+const cropStatusOptions = Object.values(startMethodDefinitions);
 
 const cropSearchAliases = {
   "mini-tomato": ["みにとまと", "ミニトマト", "プチトマト", "ぷちとまと", "小型トマト", "こがたとまと"],
@@ -241,6 +396,21 @@ const cropSearchAliases = {
   rakkyo: ["らっきょう", "ラッキョウ", "辣韮"],
   "chili-pepper": ["とうがらし", "トウガラシ", "唐辛子", "鷹の爪", "たかのつめ"],
   paprika: ["ぱぷりか", "パプリカ"],
+  cauliflower: ["かりふらわー", "カリフラワー", "花椰菜", "はなやさい"],
+  kohlrabi: ["こーるらび", "コールラビ", "蕪甘藍", "かぶかんらん"],
+  romanesco: ["ろまねすこ", "ロマネスコ", "ロマネスコカリフラワー"],
+  "salad-na": ["さらだな", "サラダ菜", "サラダナ", "ちしゃ", "チシャ"],
+  "chima-sanchu": ["ちまさんちゅ", "チマサンチュ", "サンチュ", "さんちゅ", "包菜", "つつみな"],
+  "mustard-greens": ["からしな", "カラシナ", "からし菜", "芥子菜", "辛子菜"],
+  nabana: ["なばな", "ナバナ", "菜花", "菜の花", "なのはな"],
+  beets: ["びーつ", "ビーツ", "ビート", "てんさい", "甜菜", "火焔菜"],
+  "swiss-chard": ["ふだんな", "フダンナ", "不断草", "スイスチャード", "すいすちゃーど"],
+  mitsuba: ["みつば", "ミツバ", "三つ葉", "三葉"],
+  molokheiya: ["もろへいや", "モロヘイヤ", "縞綱麻", "しまつなそ"],
+  ensai: ["えんさい", "エンサイ", "空芯菜", "くうしんさい", "ヨウサイ", "ようさい"],
+  "ice-plant": ["あいすぷらんと", "アイスプラント", "クリスタルリーフ", "ぷっちーな"],
+  treviso: ["とれびす", "トレビス", "ラディッキオ", "赤チコリ", "あかちこり"],
+  chijimina: ["ちぢみな", "チヂミナ", "縮み菜", "ちぢみ菜"],
   burdock: ["ごぼう", "ゴボウ", "牛蒡"]
 };
 
@@ -334,7 +504,7 @@ function taskIcon(id, className = "task-icon") {
 
 function weatherIcon(id, className = "weather-main-icon") {
   return h("div", { class: className, "aria-hidden": "true" }, [
-    h("img", { src: `./assets/weather/${id}.svg`, alt: "", loading: "lazy", draggable: "false" })
+    h("img", { src: `./assets/weather/${id}.png`, alt: "", loading: "lazy", draggable: "false" })
   ]);
 }
 
@@ -416,6 +586,7 @@ function loadState() {
       migrated.crops = [];
       migrated.selectedCropId = null;
     }
+    migrated.crops = (migrated.crops || []).map(normalizeCropRecord);
     const legacy = { "tokyo-setagaya": ["東京都", "東京23区"], nagano: ["長野県", "長野市"], nasu: ["栃木県", "那須町"], osaka: ["大阪府", "大阪市"] };
     if (legacy[saved.regionId] && (!saved.prefecture || !saved.city)) {
       migrated.prefecture = legacy[saved.regionId][0];
@@ -503,7 +674,7 @@ function h(tag, attrs = {}, children = []) {
     else if (key.startsWith("on")) node.addEventListener(key.slice(2).toLowerCase(), value);
     else node.setAttribute(key, value);
   });
-  [].concat(children).filter(Boolean).forEach((child) => node.append(child.nodeType ? child : document.createTextNode(child)));
+  [].concat(children).filter((child) => child !== false && child != null).forEach((child) => node.append(child.nodeType ? child : document.createTextNode(child)));
   return node;
 }
 
@@ -566,7 +737,7 @@ function renderOnboarding() {
     h("div", { class: "onboarding-card" }, [
       h("section", {}, [
         h("div", { class: "brand" }, [
-          h("div", { class: "brand-mark", text: "🌱" }),
+          brandMark(),
           h("div", {}, [h("p", { text: "家庭菜園カレンダー" }), h("h1", { text: "やさい暦" })])
         ]),
         h("p", {
@@ -582,9 +753,9 @@ function renderOnboarding() {
         h("div", { class: "panel-header" }, [h("h3", { text: "初回登録" }), h("span", { class: "badge green", text: "無料枠" })]),
         h("div", { class: "settings-list" }, [
           settingRow("無料枠で使えること", "作物3件まで、作付け日からの基本作業スケジュール、栽培履歴、カレンダー表示"),
-          settingRow("地域・環境アドバイス", "気候区分判定、地域補正、気象アラート、地域別おすすめは有料デモで利用できます。")
+          settingRow("地域アドバイス", "地域に合わせた作業タイミング、天気の注意、おすすめ野菜はプレミアムで利用できます。")
         ]),
-        h("button", { class: "primary-btn", style: "width:100%", onclick: finishOnboarding }, ["🌿", "はじめる"])
+        h("button", { class: "primary-btn", style: "width:100%", onclick: finishOnboarding }, [uiIcon("check"), "はじめる"])
       ])
     ])
   ]);
@@ -601,18 +772,18 @@ function renderSidebar() {
   const cropLimit = state.premium ? "無制限" : "3 無料枠";
   return h("aside", { class: "side" }, [
     h("div", { class: "brand" }, [
-      h("div", { class: "brand-mark", text: "🌱" }),
+      brandMark(),
       h("div", {}, [h("h1", { text: "やさい暦" }), h("p", { text: "家庭菜園サポート" })])
     ]),
     h("div", { class: "side-meta" }, [
       state.premium ? meta("地域", `${region.prefecture}${region.city || ""}`) : null,
-      state.premium ? meta("気候区分", region.climateZoneName) : null,
+      state.premium ? meta("地域タイプ", region.climateZoneName) : null,
       meta("登録作物", `${state.crops.length}/${cropLimit}`),
       meta("今週の予定", `${tasksWithin(allTasks, 7).length}件`)
     ]),
     h("nav", { class: "nav", "aria-label": "主要ナビゲーション" }, [
       navButton("home", "home", "ホーム"),
-      navButton("crops", "sprout", "作物"),
+      navButton("crops", "crops", "作物"),
       navButton("calendar", "calendar", "カレンダー"),
       navButton("alerts", "bell", `アラート${alerts.length ? ` ${alerts.length}` : ""}`),
       navButton("settings", "settings", "設定")
@@ -622,8 +793,28 @@ function renderSidebar() {
 
 function navButton(view, icon, label) {
   return h("button", { class: state.view === view ? "active" : "", onclick: () => setState({ view }) }, [
-    uiIcon(icon, "nav-icon"),
+    navIcon(icon),
     h("span", { text: label })
+  ]);
+}
+
+function navIcon(icon) {
+  const sources = {
+    home: "nav-home.png",
+    crops: "nav-crops.png",
+    calendar: "nav-calendar.png",
+    bell: "nav-alerts.png",
+    settings: "nav-settings.png"
+  };
+  if (!sources[icon]) return uiIcon(icon, "nav-icon");
+  return h("span", { class: "nav-icon nav-image-icon" }, [
+    h("img", { src: `./assets/ui/${sources[icon]}`, alt: "", loading: "lazy" })
+  ]);
+}
+
+function brandMark() {
+  return h("div", { class: "brand-mark" }, [
+    h("img", { src: "./assets/ui/app-seedling.png", alt: "", loading: "lazy" })
   ]);
 }
 
@@ -649,14 +840,13 @@ function renderTopbar() {
     home: ["ホーム", "今日やることと、今週の畑の流れを確認できます。"],
     crops: ["作物管理", "育てたい作物と栽培中の作物を登録します。"],
     calendar: ["作業カレンダー", "自動生成された予定を月表示で確認します。"],
-    alerts: state.premium ? ["気象アラート・提案", "登録作物と地域に合わせた注意点を表示します。"] : ["アラート・提案", "地域・環境に合わせた提案は有料デモで利用できます。"],
+    alerts: state.premium ? ["天気の注意・提案", "登録作物と地域に合わせた注意点を表示します。"] : ["アラート・提案", "地域に合わせた提案はプレミアムで利用できます。"],
     settings: state.premium ? ["設定", "地域、通知、プランを管理します。"] : ["設定", "通知とプランを管理します。"]
   };
   const [title, subtitle] = titles[state.view];
   return h("div", { class: "topbar" }, [
     h("div", {}, [h("h2", { text: title }), h("p", { class: "muted", text: subtitle })]),
     h("div", { class: "top-actions" }, [
-      h("button", { class: "secondary-btn", onclick: () => seedDemoData() }, ["デモ作物"]),
       h("button", { class: "primary-btn", onclick: () => openCropModal() }, [uiIcon("plus"), "作物を追加"])
     ])
   ]);
@@ -705,13 +895,13 @@ function renderHome() {
         h("div", { class: "panel-header" }, [h("h3", { text: "今週やること" }), h("span", { class: "badge amber", text: `${weekTasks.length}件` })]),
         taskList(weekTasks.slice(0, 5), "week")
       ]),
-      !state.premium ? premiumNudge("地域に合わせて調整する", "気候区分、地域補正、気象アラートを使うと、あなたの地域に近い作業タイミングで確認できます。") : null,
+      !state.premium ? premiumNudge("地域に合わせて調整する", "地域に近い作業タイミングや天気の注意を確認できます。") : null,
       state.premium ? h("div", { class: "panel" }, [
         h("div", { class: "panel-header" }, [h("h3", { text: "気象アラート" }), h("button", { class: "plain-btn", onclick: () => setState({ view: "alerts" }) }, ["アラートを見る"])]),
         alertList(alerts.slice(0, 3))
       ]) : null,
       state.premium ? h("div", { class: "panel" }, [
-        h("div", { class: "panel-header" }, [h("h3", { text: "今月おすすめ" }), h("span", { class: "badge green", text: "地域補正" })]),
+        h("div", { class: "panel-header" }, [h("h3", { text: "今月おすすめ" }), h("span", { class: "badge green", text: "地域別" })]),
         h("div", { class: "recommend-list" }, recs.map(renderRecommendCard))
       ]) : null
     ])
@@ -761,7 +951,8 @@ function renderCropCard(item, activeCropId = state.selectedCropId) {
         h("span", { text: master.name }),
         selected ? h("span", { class: "badge green", text: "表示中" }) : null
       ]),
-      h("p", { class: "crop-meta", text: `${item.status} / ${master.family}` }),
+      h("p", { class: "crop-meta", text: `${cropPhaseLabel(item, master)} / ${master.family}` }),
+      h("p", { class: "crop-meta", text: cropDateSummary(item, master) }),
       h("p", { class: "crop-meta", text: next ? `次: ${formatDate(next.date)} ${next.name}` : "予定は完了しています" }),
       h("div", { class: "crop-progress" }, [h("span", { style: `width:${progress}%` })])
     ]),
@@ -772,20 +963,23 @@ function renderCropCard(item, activeCropId = state.selectedCropId) {
 function renderCropDetail(item) {
   const master = getCrop(item.masterId);
   const tasks = tasksForCrop(item);
-  const future = tasks.filter((t) => parseDate(t.date) >= today);
+  const future = tasks.filter((t) => parseDate(t.date) >= today && !t.recordOnly);
   const after = getAfterCropSuggestions(item);
+  const visibleAfter = selectAfterCropSuggestions(after, 3);
   const finishDate = getCropFinishDate(item);
+  const harvest = getHarvestSchedule(item);
   return h("div", {}, [
     h("div", { class: "panel-header" }, [
       h("div", {}, [
         h("div", { class: "detail-title" }, [cropIcon(master.id, "detail-crop-icon"), h("h3", { text: master.name })]),
         h("p", { class: "muted", text: `${master.family} / 難易度 ${master.difficulty} / ${master.weeklyCareLevel}` })
       ]),
-      h("span", { class: "badge green", text: item.status })
+      h("span", { class: "badge green", text: cropPhaseLabel(item, master) })
     ]),
     renderCropStateSummary(item, master, future),
+    renderCropStartActions(item, master),
     h("div", { class: "stats" }, [
-      stat("収穫目安", `${master.harvestDays[0]}〜${master.harvestDays[1]}日`),
+      stat("収穫目安", harvestEstimateText(item, master, harvest)),
       stat("低温注意", `${master.lowTempRisk}℃未満`),
       stat("高温注意", `${master.highTempRisk}℃以上`)
     ]),
@@ -793,12 +987,12 @@ function renderCropDetail(item) {
     taskList(future.slice(0, 3), "detail"),
     h("h3", { class: "section-title", text: "作業タイムライン" }),
     h("div", { class: "timeline" }, tasks.map((task) => renderTimelineItem(task))),
-    h("div", { class: "section-title-row" }, [
+    isCropStarted(item) ? h("div", { class: "section-title-row" }, [
       h("h3", { class: "section-title", text: "後作候補（終了予定月から判定）" }),
       h("span", { class: "badge amber", text: `${formatDate(iso(finishDate))}頃から` })
-    ]),
-    afterCropNote(master),
-    h("div", { class: "recommend-list" }, after.slice(0, 3).map((suggestion) => renderAfterCropCard(master, suggestion))),
+    ]) : h("h3", { class: "section-title", text: "栽培開始の目安" }),
+    isCropStarted(item) ? afterCropNote(master, visibleAfter) : renderTimingAdvice(master),
+    isCropStarted(item) ? h("div", { class: "recommend-list" }, visibleAfter.map((suggestion) => renderAfterCropCard(master, suggestion))) : null,
     h("div", { class: "actions" }, [
       h("button", { class: "secondary-btn", onclick: () => editCrop(item.id) }, ["編集"]),
       h("button", { class: "secondary-btn", onclick: () => finishCrop(item.id) }, ["栽培終了"]),
@@ -810,12 +1004,13 @@ function renderCropDetail(item) {
 function renderCropStateSummary(item, master, futureTasks) {
   const progress = calcProgress(item);
   const next = futureTasks[0];
-  const start = parseDate(item.plantingDate || item.sowDate || iso(today));
-  const harvestStart = addDays(start, master.harvestDays[0]);
+  const harvest = getHarvestSchedule(item);
+  const harvestStart = addDays(harvest.base.date, harvest.range[0]);
+  const harvestReady = isHarvestScheduleReady(item, master);
   return h("div", { class: "state-summary" }, [
     h("div", {}, [
-      h("span", { class: "muted", text: "いまの状態" }),
-      h("strong", { text: item.status })
+      h("span", { class: "muted", text: "栽培記録" }),
+      h("strong", { text: cropDateSummary(item, master) })
     ]),
     h("div", {}, [
       h("span", { class: "muted", text: "次の作業" }),
@@ -823,13 +1018,122 @@ function renderCropStateSummary(item, master, futureTasks) {
     ]),
     h("div", {}, [
       h("span", { class: "muted", text: "収穫開始目安" }),
-      h("strong", { text: formatDate(iso(harvestStart)) })
+      h("strong", { text: !isCropStarted(item) ? "開始後に自動計算" : harvestReady ? formatDate(iso(harvestStart)) : "定植後に自動計算" })
     ]),
     h("div", { class: "summary-progress" }, [
       h("span", { class: "muted", text: "進み具合" }),
       h("div", { class: "crop-progress" }, [h("span", { style: `width:${progress}%` })])
     ])
   ]);
+}
+
+function renderCropStartActions(item, master) {
+  const method = getStartMethod(item, master);
+  const buttons = cropStartActionButtons(item, master, method);
+  if (!buttons.length) return null;
+  const text = item.status === "育てたい"
+    ? "作業が済んだら押してください。今日の日付を自動で記録し、予定を作り直します。"
+    : "苗を畑やプランターへ移したら押してください。今日を定植日として記録します。";
+  return h("div", { class: "crop-start-actions" }, [
+    h("div", {}, [
+      h("strong", { text: "作業を記録" }),
+      h("p", { class: "muted", text })
+    ]),
+    h("div", { class: "actions" }, buttons)
+  ]);
+}
+
+function cropStartActionButtons(item, master, method = getStartMethod(item, master)) {
+  if (item.status === "育てたい") {
+    return allowedStartMethods(master)
+      .filter((option) => option.value !== "planning")
+      .map((option, index) => {
+        const cls = index === 0 ? "primary-btn" : "secondary-btn";
+        if (["direct", "nursery"].includes(option.value)) {
+          return h("button", { class: cls, onclick: () => markCropSown(item.id, option.value) }, [startActionLabel(option.value, master)]);
+        }
+        return h("button", { class: cls, onclick: () => markCropPlanted(item.id, option.value) }, [startActionLabel(option.value, master)]);
+      });
+  }
+  if (method === "nursery" && item.status === "種まき済み" && !isIsoDate(item.plantingDate)) {
+    return [h("button", { class: "primary-btn", onclick: () => markCropPlanted(item.id, "nursery") }, ["定植完了"])];
+  }
+  return [];
+}
+
+function renderTimingAdvice(master) {
+  const methods = allowedStartMethods(master).filter((option) => option.value !== "planning");
+  const cards = [];
+  if (methods.some((option) => ["direct", "nursery"].includes(option.value))) {
+    cards.push(h("div", {}, [
+      h("span", { class: "muted", text: methods.some((option) => option.value === "nursery") ? "種まき・育苗開始の適期" : "種まき適期" }),
+      h("strong", { text: timingWindowText(master.seedMonths) })
+    ]));
+  }
+  if (methods.some((option) => option.value === "seedling" || option.value === "nursery")) {
+    cards.push(h("div", {}, [
+      h("span", { class: "muted", text: "苗の定植適期" }),
+      h("strong", { text: timingWindowText(master.plantingMonths) })
+    ]));
+  }
+  if (methods.some((option) => option.value === "material")) {
+    cards.push(h("div", {}, [
+      h("span", { class: "muted", text: `${plantingNoun(master)}の適期` }),
+      h("strong", { text: timingWindowText(master.plantingMonths?.length ? master.plantingMonths : master.seedMonths) })
+    ]));
+  }
+  return h("div", { class: "timing-advice" }, cards);
+}
+
+function cropPhaseLabel(item, master = getCrop(item.masterId)) {
+  const method = getStartMethod(item, master);
+  if (item.status === "育てたい") return "計画中";
+  if (method === "direct") return "直播済み";
+  if (method === "nursery") return isIsoDate(item.plantingDate) ? "定植済み" : "育苗中";
+  if (method === "seedling") return "苗を定植";
+  if (method === "material") return `${plantingNoun(master)}済み`;
+  return "栽培中";
+}
+
+function cropDateSummary(item, master = getCrop(item.masterId)) {
+  const method = getStartMethod(item, master);
+  if (item.status === "育てたい") {
+    if (plantingMaterialCropIds.has(master.id)) {
+      const plant = nextTimingDate(master.plantingMonths?.length ? master.plantingMonths : master.seedMonths);
+      return `${plantingNoun(master)} ${formatDate(plant)}頃`;
+    }
+    const seed = master.seedMonths?.length ? nextTimingDate(master.seedMonths) : null;
+    const plant = isTransplantMethodAvailable(master) ? nextTimingDate(master.plantingMonths) : null;
+    if (seed && plant) return `種まき ${formatDate(seed)}頃 / 定植 ${formatDate(plant)}頃`;
+    if (plant) return `定植 ${formatDate(plant)}頃`;
+    if (seed) return `種まき ${formatDate(seed)}頃`;
+    return "適期を確認中";
+  }
+  const hasSow = isIsoDate(item.sowDate);
+  const hasPlant = isIsoDate(item.plantingDate);
+  if (method === "nursery" && hasSow && hasPlant) return `ポット種まき ${formatDate(item.sowDate)} / 定植 ${formatDate(item.plantingDate)}`;
+  if (method === "nursery" && hasSow) return `ポット種まき ${formatDate(item.sowDate)}`;
+  if (method === "material" && hasPlant) return `${plantingNoun(master)} ${formatDate(item.plantingDate)}`;
+  if (method === "seedling" && hasPlant) return `定植 ${formatDate(item.plantingDate)}`;
+  if (method === "direct" && hasSow) return `直播 ${formatDate(item.sowDate)}`;
+  if (hasSow && hasPlant && isPlantingTaskRelevant(master)) return `種まき ${formatDate(item.sowDate)} / 定植 ${formatDate(item.plantingDate)}`;
+  if (hasPlant) return `${plantingNoun(master)} ${formatDate(item.plantingDate)}`;
+  if (hasSow) return `種まき ${formatDate(item.sowDate)}`;
+  return "日付未設定";
+}
+
+function isCropStarted(item) {
+  return item.status !== "育てたい" && (isIsoDate(item.sowDate) || isIsoDate(item.plantingDate));
+}
+
+function isHarvestScheduleReady(item, master = getCrop(item.masterId || item.id)) {
+  const method = getStartMethod(item, master);
+  return !(method === "nursery" && item.status === "種まき済み" && !isIsoDate(item.plantingDate));
+}
+
+function harvestEstimateText(item, master, harvest = getHarvestSchedule(item)) {
+  if (!isHarvestScheduleReady(item, master)) return "定植後に自動計算";
+  return `${harvest.base.label} ${harvest.range[0]}〜${harvest.range[1]}日`;
 }
 
 function renderTimelineItem(task) {
@@ -848,17 +1152,24 @@ function renderAfterCropCard(previous, suggestion) {
     cropIcon(candidate.id),
     h("div", {}, [
       h("strong", { text: candidate.name }),
-      h("p", { text: suggestion.reason || `${previous.name}と違う${candidate.family}に替え、連作の負担を分散できます。` })
+      h("span", { class: "recommend-meta", text: `${candidate.family} / ${candidate.category}` }),
+      h("p", { text: suggestion.reason || afterCropMerit(candidate) })
     ]),
     h("span", { class: "badge green", text: suggestion.badge || "後作候補" })
   ]);
 }
 
-function afterCropNote(previous) {
-  return h("p", {
+function afterCropNote(previous, suggestions = []) {
+  const families = [...new Set(suggestions.map((entry) => (entry.crop || entry).family))]
+    .filter((family) => family && family !== previous.family)
+    .slice(0, 3);
+  const familyText = families.length ? `${families.join("・")}など` : "別の科";
+  return h("div", {
     class: "aftercrop-note",
-    text: `${previous.name}と同じ${previous.family}を避け、片付け予定月から作りやすい候補を優先しています。`
-  });
+  }, [
+    h("strong", { text: `${previous.family}の連作を避ける` }),
+    h("span", { text: `${previous.name}と同じ科を続けず、${familyText}から片付け時期に合う作物を優先しています。` })
+  ]);
 }
 
 function renderHistoryRow(item) {
@@ -871,7 +1182,7 @@ function renderHistoryRow(item) {
 
 function renderCalendar() {
   const base = new Date(today.getFullYear(), today.getMonth() + state.calendarOffset, 1);
-  const events = getAllTasks();
+  const events = getAllTasks({ includeRecords: true });
   const upcoming = events.filter((event) => {
     const date = parseDate(event.date);
     return date >= today && daysBetween(today, date) <= 7;
@@ -947,14 +1258,14 @@ function renderAlerts() {
     return h("section", { class: "panel" }, [
       h("div", { class: "panel-header" }, [
         h("h3", { text: "アラート・提案" }),
-        h("span", { class: "badge amber", text: "有料デモ" })
+        h("span", { class: "badge amber", text: "プレミアム" })
       ]),
       h("div", { class: "settings-list" }, [
-        settingRow("無料枠では非表示", "地域・環境に合わせた気象アラート、地域補正おすすめ、気候区分判定は無料枠では表示しません。"),
+        settingRow("無料枠では非表示", "地域に合わせた天気の注意、作業タイミング、おすすめ野菜はプレミアムで表示します。"),
         settingRow("無料枠で使えること", "作物ごとの基本作業スケジュール、カレンダー、栽培履歴を利用できます。")
       ]),
       h("div", { class: "actions" }, [
-        h("button", { class: "secondary-btn", onclick: () => setState({ premium: true, view: "settings" }) }, ["有料デモを試す"])
+        h("button", { class: "secondary-btn", onclick: () => setState({ premium: true, view: "settings" }) }, ["プレミアムを試す"])
       ])
     ]);
   }
@@ -963,6 +1274,7 @@ function renderAlerts() {
   const recs = getRecommendations();
   const selected = state.crops.find((item) => item.id === state.selectedCropId) || state.crops[0];
   const after = selected ? getAfterCropSuggestions(selected) : [];
+  const visibleAfter = selected ? selectAfterCropSuggestions(after, 5) : [];
   return h("div", { class: "grid dashboard-grid" }, [
     h("section", { class: "grid" }, [
       h("div", { class: "panel" }, [
@@ -978,13 +1290,14 @@ function renderAlerts() {
           selected ? h("span", { class: "badge violet", text: `${getCrop(selected.masterId).name} / ${formatMonth(getCropFinishDate(selected))}以降` }) : null
         ]),
         selected ? h("div", {}, [
-          afterCropNote(getCrop(selected.masterId)),
-          h("div", { class: "recommend-list" }, after.slice(0, 5).map((suggestion) => renderAfterCropCard(getCrop(selected.masterId), suggestion)))
+          afterCropNote(getCrop(selected.masterId), visibleAfter),
+          h("div", { class: "recommend-list" }, visibleAfter.map((suggestion) => renderAfterCropCard(getCrop(selected.masterId), suggestion)))
         ]) : empty("作物を登録すると、同じ場所に次に植えやすい候補を表示します。")
       ])
     ]),
     h("section", { class: "panel" }, [
       h("div", { class: "panel-header" }, [h("h3", { text: "月別おすすめ野菜" }), h("span", { class: "badge green", text: `${formatMonth(today)}` })]),
+      monthlyRecommendationNote(),
       h("div", { class: "recommend-list" }, recs.slice(0, 8).map(renderRecommendCard))
     ])
   ]);
@@ -995,6 +1308,7 @@ function renderRecommendCard(item) {
     cropIcon(item.crop.id),
     h("div", {}, [
       h("strong", { text: item.crop.name }),
+      item.timingLabel ? h("span", { class: "recommend-meta", text: item.timingLabel }) : null,
       h("p", { text: item.reason }),
       item.note ? h("div", { class: "advice-points compact" }, [
         h("span", { class: "advice-point", text: item.note })
@@ -1042,6 +1356,8 @@ function renderCropSearchSuggestions(container, query, category, onPick) {
     h("span", { class: "suggestion-label", text: "検索候補" }),
     h("div", { class: "suggestion-chips" }, suggestions.map((item) => h("button", {
       class: "chip suggestion-chip",
+      type: "button",
+      onpointerdown: () => onPick(item.id),
       onclick: () => onPick(item.id)
     }, [cropIcon(item.id, "inline-crop-icon"), item.name])))
   );
@@ -1049,14 +1365,14 @@ function renderCropSearchSuggestions(container, query, category, onPick) {
 
 function premiumNudge(title, body) {
   return h("div", { class: "panel premium-nudge" }, [
-    h("div", { class: "panel-header" }, [h("h3", { text: title }), h("span", { class: "badge amber", text: "有料デモ" })]),
+    h("div", { class: "panel-header" }, [h("h3", { text: title }), h("span", { class: "badge amber", text: "プレミアム" })]),
     h("p", { class: "muted", text: body }),
-    h("button", { class: "secondary-btn", onclick: () => setState({ premium: true, view: "settings" }) }, ["有料デモを試す"])
+    h("button", { class: "secondary-btn", onclick: () => setState({ premium: true, view: "settings" }) }, ["プレミアムを試す"])
   ]);
 }
 
 function weatherStatusBadge() {
-  if (state.weatherStatus === "ready" && state.weatherForecast) return h("span", { class: "badge green", text: state.weatherForecast.source === "Open-Meteo Cache" ? "天気キャッシュ" : "Open-Meteo" });
+  if (state.weatherStatus === "ready" && state.weatherForecast) return h("span", { class: "badge green", text: "予報更新済み" });
   if (state.weatherStatus === "loading") return h("span", { class: "badge blue", text: "取得中" });
   if (state.weatherStatus === "error") return h("span", { class: "badge amber", text: "推定表示" });
   return h("span", { class: "badge amber", text: "準備中" });
@@ -1064,10 +1380,9 @@ function weatherStatusBadge() {
 
 function weatherSourceNote() {
   if (state.weatherStatus === "ready" && state.weatherForecast) {
-    const source = state.weatherForecast.source === "Open-Meteo Cache" ? "サーバー側で取得したOpen-Meteoキャッシュ" : "Open-Meteoの7日予報";
-    return h("p", { class: "fine-print", text: `${source}をもとに表示しています。最終更新: ${formatDateTime(state.weatherFetchedAt)}` });
+    return h("p", { class: "fine-print", text: `設定地域の予報をもとに表示しています。最終更新: ${formatDateTime(state.weatherFetchedAt)}` });
   }
-  if (state.weatherStatus === "loading") return h("p", { class: "fine-print", text: "Open-Meteoから天気予報を取得しています。" });
+  if (state.weatherStatus === "loading") return h("p", { class: "fine-print", text: "天気予報を更新しています。" });
   if (state.weatherStatus === "error") return h("p", { class: "fine-print", text: "天気予報を取得できないため、地域の傾向をもとにした目安を表示しています。" });
   return h("p", { class: "fine-print", text: "天気予報の取得準備をしています。" });
 }
@@ -1115,20 +1430,19 @@ function renderSettings() {
       ])
     ]),
     h("section", { class: "panel" }, [
-      h("div", { class: "panel-header" }, [h("h3", { text: "プラン" }), h("span", { class: state.premium ? "badge green" : "badge amber", text: state.premium ? "有料デモ" : "無料枠" })]),
+      h("div", { class: "panel-header" }, [h("h3", { text: "プラン" }), h("span", { class: state.premium ? "badge green" : "badge amber", text: state.premium ? "プレミアム" : "無料枠" })]),
       h("div", { class: "settings-list" }, [
         settingRow("無料プラン", "作物3件まで、基本の作業予定、カレンダー、栽培履歴を使えます。"),
-        settingRow("有料プラン", "作物数を増やし、地域に合わせた作業タイミングや気象アラートを確認できます。")
+        settingRow("プレミアム", "作物数を増やし、地域に合わせた作業タイミングや天気の注意を確認できます。")
       ]),
       h("div", { class: "actions" }, [
-        h("button", { class: "secondary-btn", onclick: () => setState({ premium: !state.premium }) }, [state.premium ? "無料枠に戻す" : "有料デモに切替"])
+        h("button", { class: "secondary-btn", onclick: () => setState({ premium: !state.premium }) }, [state.premium ? "無料枠に戻す" : "プレミアムを試す"])
       ]),
       h("h3", { class: "section-title", text: "ご利用にあたって" }),
       h("p", { class: "fine-print", text: "表示される作業予定や注意は目安です。実際の天気、土の状態、品種、栽培環境を見ながら調整してください。" }),
       h("div", { class: "settings-list source-list" }, [
-        settingRow("基本栽培", sourcePolicy.cropBase),
-        settingRow("気象・地域補正", sourcePolicy.weather),
-        settingRow("一般原則", sourcePolicy.general)
+        settingRow("栽培情報", "家庭菜園向けの栽培資料をもとに、初心者が確認しやすい目安に整理しています。"),
+        settingRow("天気の注意", "地域の予報をもとに、作物ごとに気をつけたい日だけ表示します。")
       ])
     ]),
     h("section", { class: "panel" }, [
@@ -1211,12 +1525,13 @@ function renderCropModal(editingId = null) {
   const initial = editing || {
     masterId: state.form.selectedMasterId,
     place: state.locationType,
-    sowDate: iso(today),
-    plantingDate: iso(today),
+    sowDate: "",
+    plantingDate: "",
+    startMethod: "planning",
     status: "育てたい",
     note: ""
   };
-  const modalState = { ...initial };
+  const modalState = normalizeCropRecord({ ...initial });
   let modalStep = editing ? 2 : 1;
   document.querySelectorAll(".modal-backdrop").forEach((backdrop) => backdrop.remove());
   const root = h("div", {
@@ -1231,7 +1546,7 @@ function renderCropModal(editingId = null) {
   const selectedMaster = () => getCrop(modalState.masterId);
   const stepDots = () => h("div", { class: "stepper" }, [
     stepDot(1, "作物", modalStep),
-    stepDot(2, "状態", modalStep),
+    stepDot(2, "始め方", modalStep),
     stepDot(3, "確認", modalStep)
   ]);
 
@@ -1245,6 +1560,7 @@ function renderCropModal(editingId = null) {
     if (suggestionsContainer) renderCropSearchSuggestions(suggestionsContainer, state.form.search, state.form.category, (id) => {
       modalState.masterId = id;
       state.form.selectedMasterId = id;
+      if (!editing) applyStartMethod(modalState, "planning", getCrop(id), { preserveDates: false });
       rebuildPicker(container, suggestionsContainer);
     });
     const filtered = getCropSearchResults(state.form.search, state.form.category);
@@ -1256,13 +1572,17 @@ function renderCropModal(editingId = null) {
       return;
     }
     filtered.forEach((item) => {
+      const selectItem = () => {
+        modalState.masterId = item.id;
+        state.form.selectedMasterId = item.id;
+        if (!editing) applyStartMethod(modalState, "planning", item, { preserveDates: false });
+        rebuildPicker(container, suggestionsContainer);
+      };
       container.append(h("button", {
+        type: "button",
         class: `crop-pick ${modalState.masterId === item.id ? "active" : ""}`,
-        onclick: () => {
-          modalState.masterId = item.id;
-          state.form.selectedMasterId = item.id;
-          rebuildPicker(container, suggestionsContainer);
-        }
+        onpointerdown: selectItem,
+        onclick: selectItem
       }, [
         cropIcon(item.id, "crop-pick-icon"),
         h("strong", { text: item.name }),
@@ -1311,12 +1631,10 @@ function renderCropModal(editingId = null) {
           cropIcon(selectedMaster().id, "inline-crop-icon"),
           h("div", {}, [h("strong", { text: selectedMaster().name }), h("p", { class: "muted", text: `${selectedMaster().family} / ${selectedMaster().difficulty}` })])
         ]),
-        h("h3", { class: "section-title", text: "いまの状態を選ぶ" }),
-        h("div", { class: "form-grid" }, [
-          selectField("ステータス", "cropStatus", modalState.status, ["育てたい", "種まき済み", "苗を植えた", "生育中", "収穫中", "栽培終了"].map((v) => [v, v]), (v) => { modalState.status = v; }),
-          inputField("種まき日", "date", modalState.sowDate, (v) => { modalState.sowDate = v; }),
-          inputField("定植日・作付け日", "date", modalState.plantingDate, (v) => { modalState.plantingDate = v; })
-        ]),
+        h("h3", { class: "section-title", text: "栽培の始め方を選ぶ" }),
+        renderStartMethodChoices(modalState, selectedMaster(), () => renderStep()),
+        renderModalDateFields(modalState, selectedMaster()),
+        ...(modalState.status === "育てたい" ? [renderTimingAdvice(selectedMaster())] : []),
         modalActions(root, () => goStep(1), () => goStep(3), "確認へ")
       );
       return;
@@ -1327,13 +1645,13 @@ function renderCropModal(editingId = null) {
         cropIcon(selectedMaster().id, "detail-crop-icon"),
         h("div", {}, [
           h("strong", { text: selectedMaster().name }),
-          h("p", { class: "muted", text: `${modalState.status} / 種まき ${formatDate(modalState.sowDate)} / 定植 ${formatDate(modalState.plantingDate)}` })
+          h("p", { class: "muted", text: `${cropPhaseLabel(normalizeCropRecord(modalState), selectedMaster())} / ${cropDateSummary(normalizeCropRecord(modalState), selectedMaster())}` })
         ])
       ]),
       labelWrap("メモ", h("textarea", { onchange: (e) => { modalState.note = e.target.value; } }, [modalState.note || ""])),
       modalActions(root, () => goStep(2), () => {
         if (!state.premium && !editing && state.crops.length >= 3) {
-          showToast("無料枠では作物3件までです。設定で有料デモに切り替えると追加できます。");
+          showToast("無料枠では作物3件までです。プレミアムに切り替えると追加できます。");
           return;
         }
         saveCrop(modalState, editingId);
@@ -1349,6 +1667,169 @@ function renderCropModal(editingId = null) {
 
 function openCropModal() {
   renderCropModal();
+}
+
+function renderStatusChoices(modalState, onChange) {
+  return renderStartMethodChoices(modalState, getCrop(modalState.masterId), onChange);
+}
+
+function renderStartMethodChoices(modalState, master, onChange) {
+  const currentMethod = getStartMethod(modalState, master);
+  return h("div", { class: "status-choice-grid" }, allowedStartMethods(master).map((option) =>
+    h("button", {
+      type: "button",
+      class: currentMethod === option.value ? "status-choice active" : "status-choice",
+      onclick: () => {
+        applyStartMethod(modalState, option.value, master, { preserveDates: false });
+        onChange();
+      }
+    }, [
+      h("strong", { text: option.title }),
+      h("span", { text: option.body })
+    ])
+  ));
+}
+
+function renderModalDateFields(modalState, master) {
+  const method = getStartMethod(modalState, master);
+  if (method === "planning") {
+    return h("p", { class: "muted", text: "日付はまだ登録しません。作物管理画面で作業完了ボタンを押すと、今日の日付で自動記録できます。" });
+  }
+  if (method === "direct") {
+    return h("div", { class: "form-grid" }, [
+      inputField("種まき日", "date", modalState.sowDate || iso(today), (v) => { modalState.sowDate = v; })
+    ]);
+  }
+  if (method === "nursery") {
+    const fields = [
+      inputField("ポット種まき日", "date", modalState.sowDate || iso(today), (v) => { modalState.sowDate = v; }),
+    ];
+    if (isIsoDate(modalState.plantingDate)) {
+      fields.push(inputField("定植日 任意", "date", modalState.plantingDate, (v) => { modalState.plantingDate = v; }));
+    }
+    return h("div", { class: "form-grid" }, fields);
+  }
+  const fields = [];
+  if (method === "seedling" && isIsoDate(modalState.sowDate)) {
+    fields.push(inputField("種まき日 任意", "date", modalState.sowDate, (v) => { modalState.sowDate = v; }));
+  }
+  fields.push(inputField(method === "material" ? `${plantingNoun(master)}日` : "定植日", "date", modalState.plantingDate || iso(today), (v) => { modalState.plantingDate = v; }));
+  return h("div", { class: "form-grid" }, fields);
+}
+
+function allowedStartMethods(master) {
+  const values = ["planning"];
+  if (plantingMaterialCropIds.has(master.id)) {
+    values.push("material");
+  } else {
+    if (directSownOnlyCropIds.has(master.id) || directSowPreferredCropIds.has(master.id) || !isTransplantMethodAvailable(master)) {
+      values.push("direct");
+    }
+    if (isTransplantMethodAvailable(master)) {
+      values.push("nursery", "seedling");
+    }
+  }
+  return [...new Set(values)].map((value) => startMethodOption(value, master));
+}
+
+function startMethodOption(value, master) {
+  const option = { ...startMethodDefinitions[value] };
+  if (value === "material") {
+    option.title = `${materialKindDescription(master)}を植える`;
+    option.body = `${materialKindDescription(master)}を植えた日から、作業予定と収穫目安を作ります。`;
+  }
+  if (value === "direct" && directSownOnlyCropIds.has(master.id)) {
+    option.body = "移植を避けたい作物。畑やプランターに直接まいた日から予定を作ります。";
+  }
+  return option;
+}
+
+function getStartMethod(item, master = getCrop(item.masterId || item.id)) {
+  return normalizeStartMethod(item.startMethod || inferStartMethod(item, master), master);
+}
+
+function normalizeStartMethod(method, master) {
+  const allowed = allowedStartMethods(master).map((option) => option.value);
+  if (allowed.includes(method)) return method;
+  if (plantingMaterialCropIds.has(master.id)) return "material";
+  if (directSownOnlyCropIds.has(master.id)) return "direct";
+  return allowed.includes("nursery") ? "nursery" : allowed[1] || "planning";
+}
+
+function inferStartMethod(item, master) {
+  if (item.status === "育てたい") return "planning";
+  if (plantingMaterialCropIds.has(master.id)) return "material";
+  if (item.status === "苗を植えた") return isIsoDate(item.sowDate) ? "nursery" : "seedling";
+  if (item.status === "種まき済み") {
+    if (directSownOnlyCropIds.has(master.id) || directSowPreferredCropIds.has(master.id)) return "direct";
+    return isTransplantMethodAvailable(master) ? "nursery" : "direct";
+  }
+  if (isIsoDate(item.plantingDate)) return plantingMaterialCropIds.has(master.id) ? "material" : "seedling";
+  if (isIsoDate(item.sowDate)) return directSownOnlyCropIds.has(master.id) ? "direct" : "nursery";
+  return "planning";
+}
+
+function applyStartMethod(target, method, master, { preserveDates = true } = {}) {
+  const nextMethod = normalizeStartMethod(method, master);
+  const definition = startMethodDefinitions[nextMethod];
+  target.masterId = master.id;
+  target.startMethod = nextMethod;
+  target.status = definition.status;
+  if (nextMethod === "planning") {
+    target.sowDate = "";
+    target.plantingDate = "";
+  } else if (nextMethod === "direct") {
+    target.sowDate = preserveDates && isIsoDate(target.sowDate) ? target.sowDate : iso(today);
+    target.plantingDate = "";
+  } else if (nextMethod === "nursery") {
+    target.sowDate = preserveDates && isIsoDate(target.sowDate) ? target.sowDate : iso(today);
+    if (!preserveDates) target.plantingDate = "";
+  } else {
+    target.plantingDate = preserveDates && isIsoDate(target.plantingDate) ? target.plantingDate : iso(today);
+    if (nextMethod === "material" || !isIsoDate(target.sowDate)) target.sowDate = "";
+  }
+  return target;
+}
+
+function isTransplantMethodAvailable(master) {
+  if (directSownOnlyCropIds.has(master.id) || plantingMaterialCropIds.has(master.id)) return false;
+  return plantingBaseCropIds.has(master.id) || Boolean(harvestAfterPlantingDays[master.id]);
+}
+
+function plantingNoun(master) {
+  const labels = {
+    potato: "種イモ植え付け",
+    "sweet-potato": "つる苗植え付け",
+    garlic: "りん片植え付け",
+    satoimo: "種イモ植え付け",
+    ginger: "種ショウガ植え付け",
+    nagaimo: "種イモ植え付け",
+    myoga: "地下茎植え付け",
+    rakkyo: "球根植え付け"
+  };
+  return labels[master.id] || "植え付け";
+}
+
+function materialKindDescription(master) {
+  const labels = {
+    potato: "種イモ",
+    "sweet-potato": "つる苗",
+    garlic: "りん片",
+    satoimo: "種イモ",
+    ginger: "種ショウガ",
+    nagaimo: "種イモ",
+    myoga: "地下茎",
+    rakkyo: "球根"
+  };
+  return labels[master.id] || "植え付け材料";
+}
+
+function startActionLabel(method, master) {
+  if (method === "direct") return "種まき完了";
+  if (method === "nursery") return "ポット種まき完了";
+  if (method === "seedling") return "苗を植えた";
+  if (method === "material") return `${materialKindDescription(master)}を植えた`;
+  return "作業完了";
 }
 
 function startCropModal(masterId) {
@@ -1376,7 +1857,7 @@ function editCrop(id) {
 }
 
 function saveCrop(data, editingId) {
-  const normalized = { ...data, masterId: data.masterId || state.form.selectedMasterId };
+  const normalized = normalizeCropRecord({ ...data, masterId: data.masterId || state.form.selectedMasterId });
   if (editingId) {
     setState({ crops: state.crops.map((item) => item.id === editingId ? { ...item, ...normalized } : item) });
     showToast("作物情報を更新しました。予定も再生成されています。");
@@ -1385,6 +1866,37 @@ function saveCrop(data, editingId) {
   const item = { ...normalized, id: crypto.randomUUID() };
   setState({ crops: [...state.crops, item], selectedCropId: item.id, view: "crops" });
   showToast(`${getCrop(item.masterId).name}を追加しました。作業予定を自動生成しました。`);
+}
+
+function markCropSown(id, method = "direct") {
+  const item = state.crops.find((crop) => crop.id === id);
+  if (!item) return;
+  const master = getCrop(item.masterId);
+  const nextMethod = normalizeStartMethod(method, master);
+  const label = nextMethod === "nursery" ? "ポット種まき" : "種まき";
+  if (!window.confirm(`${master.name}の${label}を今日完了にしますか？`)) return;
+  setState({
+    crops: state.crops.map((crop) => crop.id === id
+      ? normalizeCropRecord({ ...crop, startMethod: nextMethod, status: "種まき済み", sowDate: iso(today), plantingDate: nextMethod === "direct" ? "" : crop.plantingDate || "" })
+      : crop)
+  });
+  showToast(`${master.name}の${label}日を今日で記録しました。`);
+}
+
+function markCropPlanted(id, method = "") {
+  const item = state.crops.find((crop) => crop.id === id);
+  if (!item) return;
+  const master = getCrop(item.masterId);
+  const currentMethod = getStartMethod(item, master);
+  const nextMethod = normalizeStartMethod(method || (currentMethod === "nursery" ? "nursery" : plantingMaterialCropIds.has(master.id) ? "material" : "seedling"), master);
+  const actionLabel = nextMethod === "material" ? `${materialKindDescription(master)}の植え付け` : "定植";
+  if (!window.confirm(`${master.name}の${actionLabel}を今日完了にしますか？`)) return;
+  setState({
+    crops: state.crops.map((crop) => crop.id === id
+      ? normalizeCropRecord({ ...crop, startMethod: nextMethod, status: "苗を植えた", plantingDate: iso(today) })
+      : crop)
+  });
+  showToast(`${master.name}の${actionLabel}日を今日で記録しました。`);
 }
 
 function finishCrop(id) {
@@ -1409,7 +1921,7 @@ function removeCrop(id) {
 
 function seedDemoData() {
   const samples = [
-    ["potato", -80, -80, "生育中", "畑"],
+    ["potato", -80, -80, "種まき済み", "畑"],
     ["cucumber", -12, -4, "苗を植えた", "貸し農園"],
     ["komatsuna", -8, -8, "種まき済み", "プランター"]
   ].map(([masterId, sow, plant, status, place]) => ({
@@ -1421,7 +1933,7 @@ function seedDemoData() {
     place,
     note: "デモデータ"
   }));
-  setState({ crops: samples, selectedCropId: samples[0].id, premium: true });
+  setState({ crops: samples.map(normalizeCropRecord), selectedCropId: samples[0].id, premium: true });
   showToast("確認用の栽培データを追加しました。");
 }
 
@@ -1592,21 +2104,32 @@ function relativeDayLabel(daysAhead) {
 
 function tasksForCrop(item) {
   const master = getCrop(item.masterId);
-  const start = parseDate(item.plantingDate || item.sowDate || iso(today));
+  if (item.status === "育てたい") return plannedStartTasks(item, master);
+  const method = getStartMethod(item, master);
+  if (method === "nursery" && item.status === "種まき済み" && !isIsoDate(item.plantingDate)) {
+    return nurseryStageTasks(item, master);
+  }
+  const harvest = getHarvestSchedule(item);
+  const start = harvest.base.date;
   const sow = parseDate(item.sowDate || item.plantingDate || iso(today));
-  const fertilizing = fertilizingTaskForCrop(master, start);
-  const templates = [
-    { name: item.sowDate ? "種まき確認" : "栽培開始", base: sow, offset: 0, kind: "seed", iconKey: "sowing", label: "種まき", description: "土の乾きと発芽適温を確認します。" },
-    { name: "定植・活着確認", base: start, offset: 0, kind: "plant", iconKey: "planting", label: "定植", description: "苗のぐらつき、乾き、低温リスクを確認します。" },
-    { name: master.supportRequired ? "支柱立て・誘引" : "生育確認", base: start, offset: 14, kind: "care", iconKey: master.supportRequired ? "support" : "growth-check", label: "管理", description: master.supportRequired ? "風で倒れないよう支柱と誘引を整えます。" : "葉色と土の乾き、間引きの必要を確認します。" },
-    fertilizing,
-    { name: needsHilling(master) ? "土寄せ" : "敷きわら・乾燥対策", base: start, offset: 34, kind: "care", iconKey: needsHilling(master) ? "hilling" : "mulching", label: needsHilling(master) ? "土寄せ" : "対策", description: needsHilling(master) ? "株元へ土を寄せ、倒伏と緑化を防ぎます。" : "泥はねと乾燥を抑えるため株元を保護します。" },
-    { name: "収穫開始目安", base: start, offset: master.harvestDays[0], kind: "harvest", iconKey: "harvesting", label: "収穫", description: "大きさと色を見て、取り遅れに注意します。" },
-    { name: "栽培終了・後作検討", base: start, offset: master.harvestDays[1], kind: "harvest", iconKey: "rotation", label: "後作", description: `${master.family}の連作を避け、次の作物候補を確認します。` }
-  ];
+  const planting = parseDate(item.plantingDate || item.sowDate || iso(today));
+  const hasDistinctPlantingDate = !item.sowDate || daysBetween(sow, planting) >= 7 || harvest.base.kind === "planting";
+  const includeSowTask = ["direct", "nursery"].includes(method) && isIsoDate(item.sowDate);
+  const includePlantingTask = ["nursery", "seedling", "material"].includes(method) && isIsoDate(item.plantingDate) && hasDistinctPlantingDate;
+  const fertilizing = fertilizingTaskForCrop(master, start, harvest.range);
+  const sowTaskName = method === "nursery" ? "ポット種まき確認" : "種まき確認";
+  const plantTaskName = method === "material" ? `${plantingNoun(master)}確認` : "定植確認";
+  const plantTaskLabel = method === "material" ? "植え付け" : "定植";
+  const plantTaskDescription = method === "material"
+    ? `${materialKindDescription(master)}の乾き、覆土、芽出し後の状態を確認します。`
+    : "苗のぐらつき、乾き、低温リスクを確認します。";
+  const templates = method === "direct"
+    ? directSownStageTemplates(master, sow, harvest)
+    : method === "material"
+      ? materialStageTemplates(master, planting, harvest, plantTaskName, plantTaskLabel, plantTaskDescription, includePlantingTask)
+      : transplantedStageTemplates(master, sow, planting, harvest, sowTaskName, plantTaskName, plantTaskDescription, includeSowTask, includePlantingTask, method);
   return templates
     .filter(Boolean)
-    .filter((task) => task.name !== "定植・活着確認" || item.plantingDate)
     .map((task) => ({
       id: `${item.id}-${task.name}`,
       cropId: item.id,
@@ -1617,12 +2140,207 @@ function tasksForCrop(item) {
     .sort((a, b) => parseDate(a.date) - parseDate(b.date));
 }
 
-function fertilizingTaskForCrop(master, start) {
+function nurseryStageTasks(item, master) {
+  const sow = parseDate(item.sowDate || iso(today));
+  const readyDays = nurseryReadyDays(master);
+  const readyDate = addDays(sow, readyDays);
+  const templates = [
+    { name: "ポット種まき記録", base: sow, offset: 0, kind: "seed", iconKey: "sowing", label: "記録", description: "種まき日は記録済みです。発芽まで土を乾かしすぎないよう見守ります。", recordOnly: true },
+    { name: "発芽確認", base: sow, offset: germinationCheckDays(master), kind: "seed", iconKey: "germination", label: "発芽", description: "芽が出たか確認し、乾きすぎと低温を避けます。" },
+    { name: "育苗確認", base: sow, offset: Math.max(12, Math.round(readyDays * 0.45)), kind: "care", iconKey: "seedling-check", label: "育苗", description: "徒長していないか、葉色と水やりの量を確認します。" },
+    { name: "定植準備", base: sow, offset: Math.max(18, readyDays - 7), kind: "plant", iconKey: "planting", label: "準備", description: "本葉がそろい、最低気温が安定したら植える準備をします。" },
+    { name: "定植適期", base: readyDate, offset: 0, kind: "plant", iconKey: "planting", label: "定植", description: `${master.name}は苗が育ったら定植します。完了したら「定植完了」を押してください。` }
+  ];
+  return templates.map((task) => ({
+    id: `${item.id}-${task.name}`,
+    cropId: item.id,
+    cropName: master.name,
+    date: iso(addDays(task.base, task.offset)),
+    ...task
+  })).sort((a, b) => parseDate(a.date) - parseDate(b.date));
+}
+
+function directSownStageTemplates(master, sow, harvest) {
+  return [
+    { name: "種まき記録", base: sow, offset: 0, kind: "seed", iconKey: "sowing", label: "記録", description: "種まき日は記録済みです。発芽まで土を乾かしすぎないよう見守ります。", recordOnly: true },
+    { name: "発芽確認", base: sow, offset: germinationCheckDays(master), kind: "seed", iconKey: "germination", label: "発芽", description: "芽が出たか確認し、乾いたらやさしく水を足します。" },
+    { name: "間引き・株間確認", base: sow, offset: thinningDays(master), kind: "care", iconKey: "thinning", label: "間引き", description: "混み合う芽を間引き、残す株の間隔を整えます。" },
+    master.supportRequired ? { name: "支柱立て・誘引", base: sow, offset: 28, kind: "care", iconKey: "support", label: "支柱", description: "つるや茎が伸びる前に、支柱と誘引の準備をします。" } : null,
+    { name: "防虫・水管理", base: sow, offset: 21, kind: "care", iconKey: master.tunnelRequired ? "tunnel" : "watering", label: "管理", description: master.tunnelRequired ? "葉物やアブラナ科は防虫ネットのすき間を確認します。" : "土の乾きと葉色を見て、水やりを調整します。" },
+    fertilizingTaskForCrop(master, sow, harvest.range),
+    { name: needsHilling(master) ? "土寄せ" : "敷きわら・乾燥対策", base: sow, offset: 34, kind: "care", iconKey: needsHilling(master) ? "hilling" : "mulching", label: needsHilling(master) ? "土寄せ" : "対策", description: needsHilling(master) ? "株元へ土を寄せ、倒伏や根の露出を防ぎます。" : "泥はねと乾燥を抑えるため株元を保護します。" },
+    { name: "収穫開始目安", base: sow, offset: harvest.range[0], kind: "harvest", iconKey: "harvesting", label: "収穫", description: "大きさと色を見て、取り遅れに注意します。" },
+    { name: "栽培終了・後作検討", base: sow, offset: harvest.range[1], kind: "harvest", iconKey: "rotation", label: "後作", description: `${master.family}の連作を避け、次の作物候補を確認します。` }
+  ];
+}
+
+function transplantedStageTemplates(master, sow, planting, harvest, sowTaskName, plantTaskName, plantTaskDescription, includeSowTask, includePlantingTask, method) {
+  const templates = [
+    includeSowTask ? { name: sowTaskName, base: sow, offset: 0, kind: "seed", iconKey: "sowing", label: "記録", description: "種まき日は記録済みです。", recordOnly: true } : null,
+    includePlantingTask ? { name: plantTaskName, base: planting, offset: 0, kind: "plant", iconKey: "planting", label: "記録", description: plantTaskDescription, recordOnly: true } : null,
+    { name: "活着確認", base: planting, offset: 5, kind: "plant", iconKey: "settling", label: "活着", description: "苗がしおれず根づいているか確認し、強い日差しと乾燥に注意します。" },
+    master.supportRequired ? { name: "支柱立て・誘引", base: planting, offset: 10, kind: "care", iconKey: "support", label: "支柱", description: "風で倒れないよう支柱を立て、茎をきつく締めずに誘引します。" } : { name: "生育確認", base: planting, offset: 14, kind: "care", iconKey: "growth-check", label: "管理", description: "葉色、土の乾き、虫食いの有無を確認します。" },
+    fertilizingTaskForCrop(master, planting, harvest.range),
+    { name: needsHilling(master) ? "土寄せ" : "敷きわら・乾燥対策", base: planting, offset: 34, kind: "care", iconKey: needsHilling(master) ? "hilling" : "mulching", label: needsHilling(master) ? "土寄せ" : "対策", description: needsHilling(master) ? "株元へ土を寄せ、倒伏を防ぎます。" : "泥はねと乾燥を抑えるため株元を保護します。" },
+    { name: "収穫開始目安", base: planting, offset: harvest.range[0], kind: "harvest", iconKey: "harvesting", label: "収穫", description: "大きさと色を見て、取り遅れに注意します。" },
+    { name: "栽培終了・後作検討", base: planting, offset: harvest.range[1], kind: "harvest", iconKey: "rotation", label: "後作", description: `${master.family}の連作を避け、次の作物候補を確認します。` }
+  ];
+  return templates;
+}
+
+function materialStageTemplates(master, planting, harvest, plantTaskName, plantTaskLabel, plantTaskDescription, includePlantingTask) {
+  return [
+    includePlantingTask ? { name: plantTaskName, base: planting, offset: 0, kind: "plant", iconKey: "planting", label: "記録", description: plantTaskDescription, recordOnly: true } : null,
+    { name: "芽出し確認", base: planting, offset: materialSproutDays(master), kind: "plant", iconKey: "sprouting", label: "芽出し", description: `${materialKindDescription(master)}から芽が動いているか確認します。乾燥と過湿に注意します。` },
+    { name: needsHilling(master) ? "芽かき・土寄せ" : "生育確認", base: planting, offset: materialCareDays(master), kind: "care", iconKey: needsHilling(master) ? "hilling" : "growth-check", label: needsHilling(master) ? "土寄せ" : "管理", description: needsHilling(master) ? "芽が伸びたら強い芽を残し、株元へ土を寄せます。" : "葉色、土の乾き、虫食いの有無を確認します。" },
+    fertilizingTaskForCrop(master, planting, harvest.range),
+    { name: needsHilling(master) ? "2回目の土寄せ" : "敷きわら・乾燥対策", base: planting, offset: 45, kind: "care", iconKey: needsHilling(master) ? "hilling" : "mulching", label: needsHilling(master) ? "土寄せ" : "対策", description: needsHilling(master) ? "イモが緑化しないよう、株元に土を足します。" : "土の乾きや泥はねを抑え、株元を守ります。" },
+    { name: "収穫開始目安", base: planting, offset: harvest.range[0], kind: "harvest", iconKey: "harvesting", label: "収穫", description: "大きさと色を見て、取り遅れに注意します。" },
+    { name: "栽培終了・後作検討", base: planting, offset: harvest.range[1], kind: "harvest", iconKey: "rotation", label: "後作", description: `${master.family}の連作を避け、次の作物候補を確認します。` }
+  ];
+}
+
+function plannedStartTasks(item, master) {
+  const tasks = [];
+  const methods = allowedStartMethods(master).map((option) => option.value);
+  if (methods.includes("material")) {
+    const plantDate = nextTimingDate(master.plantingMonths?.length ? master.plantingMonths : master.seedMonths);
+    tasks.push({
+      id: `${item.id}-${plantingNoun(master)}適期`,
+      cropId: item.id,
+      cropName: master.name,
+      date: iso(plantDate),
+      name: `${plantingNoun(master)}適期`,
+      kind: "plant",
+      iconKey: "planting",
+      label: "植え付け",
+      description: `${master.name}は${materialKindDescription(master)}から始める作物です。${timingWindowText(master.plantingMonths?.length ? master.plantingMonths : master.seedMonths)}を目安に植え付けます。`
+    });
+    return tasks.sort((a, b) => parseDate(a.date) - parseDate(b.date));
+  }
+  if (master.seedMonths?.length && methods.some((method) => ["direct", "nursery"].includes(method))) {
+    const seedDate = nextTimingDate(master.seedMonths);
+    tasks.push({
+      id: `${item.id}-種まき適期`,
+      cropId: item.id,
+      cropName: master.name,
+      date: iso(seedDate),
+      name: "種まき適期",
+      kind: "seed",
+      iconKey: "sowing",
+      label: "種まき",
+      description: `${master.name}を種から始めるなら、${timingWindowText(master.seedMonths)}が目安です。`
+    });
+  }
+  if (methods.some((method) => ["nursery", "seedling"].includes(method)) && master.plantingMonths?.length) {
+    const plantDate = nextTimingDate(master.plantingMonths);
+    tasks.push({
+      id: `${item.id}-苗の定植適期`,
+      cropId: item.id,
+      cropName: master.name,
+      date: iso(plantDate),
+      name: "苗の定植適期",
+      kind: "plant",
+      iconKey: "planting",
+      label: "定植",
+      description: `${master.name}を苗から始めるなら、${timingWindowText(master.plantingMonths)}が目安です。`
+    });
+  }
+  return tasks.sort((a, b) => parseDate(a.date) - parseDate(b.date));
+}
+
+function nurseryReadyDays(master) {
+  const days = {
+    tomato: 55,
+    "mini-tomato": 55,
+    eggplant: 65,
+    pepper: 60,
+    "chili-pepper": 60,
+    paprika: 60,
+    cucumber: 28,
+    okra: 25,
+    zucchini: 25,
+    pumpkin: 30,
+    "bitter-melon": 30,
+    watermelon: 32,
+    melon: 32,
+    corn: 25,
+    lettuce: 30,
+    cabbage: 35,
+    broccoli: 35,
+    cauliflower: 35,
+    kohlrabi: 25,
+    romanesco: 35,
+    "salad-na": 25,
+    "chima-sanchu": 25,
+    nabana: 30,
+    hakusai: 25,
+    celery: 60,
+    mitsuba: 35,
+    molokheiya: 25,
+    ensai: 25,
+    "ice-plant": 35,
+    treviso: 35,
+    shiso: 35,
+    basil: 30,
+    parsley: 50,
+    chive: 45,
+    onion: 55,
+    strawberry: 30,
+    "welsh-onion": 55,
+    asparagus: 60
+  };
+  return days[master.id] || 35;
+}
+
+function germinationCheckDays(master) {
+  if (["carrot", "parsley", "celery", "burdock", "mitsuba", "ice-plant"].includes(master.id)) return 12;
+  if (["pea", "fava-bean", "garlic", "onion"].includes(master.id)) return 10;
+  if (["cucumber", "zucchini", "pumpkin", "corn", "edamame", "snap-bean", "okra", "molokheiya", "ensai"].includes(master.id)) return 5;
+  return 7;
+}
+
+function thinningDays(master) {
+  if (["komatsuna", "mizuna", "mibuna", "chingensai", "shungiku", "mustard-greens", "salad-na", "chima-sanchu", "chijimina"].includes(master.id)) return 12;
+  if (["daikon", "turnip", "spinach", "beets", "swiss-chard", "kohlrabi"].includes(master.id)) return 14;
+  if (["carrot", "burdock"].includes(master.id)) return 20;
+  return 16;
+}
+
+function materialSproutDays(master) {
+  const days = {
+    potato: 20,
+    garlic: 14,
+    rakkyo: 14,
+    "sweet-potato": 7,
+    satoimo: 25,
+    ginger: 30,
+    nagaimo: 25,
+    myoga: 25
+  };
+  return days[master.id] || 21;
+}
+
+function materialCareDays(master) {
+  const days = {
+    potato: 30,
+    garlic: 35,
+    rakkyo: 35,
+    "sweet-potato": 35,
+    satoimo: 45,
+    ginger: 45,
+    nagaimo: 45,
+    myoga: 45
+  };
+  return days[master.id] || 35;
+}
+
+function fertilizingTaskForCrop(master, start, harvestDays = master.harvestDays) {
   if (master.id === "sweet-potato") {
     return { name: "つる返し・草勢確認", base: start, offset: 45, kind: "care", iconKey: "growth-check", label: "管理", description: "つるが広がったら混み合いを整え、肥料過多で葉ばかり茂っていないか確認します。" };
   }
   if (master.id === "okra") {
-    return { name: "収穫期の追肥", base: start, offset: Math.max(45, master.harvestDays[0] - 10), kind: "care", iconKey: "fertilizing", label: "追肥", description: "収穫が始まるころから草勢を見て、少量ずつ追肥します。" };
+    return { name: "収穫期の追肥", base: start, offset: Math.max(35, harvestDays[0] - 10), kind: "care", iconKey: "fertilizing", label: "追肥", description: "収穫が始まるころから草勢を見て、少量ずつ追肥します。" };
   }
   if (["tomato", "mini-tomato"].includes(master.id)) {
     return { name: "追肥", base: start, offset: 40, kind: "care", iconKey: "fertilizing", label: "追肥", description: "実がつき始めるころ、草勢を見ながら株元から少し離して施します。" };
@@ -1633,8 +2351,11 @@ function fertilizingTaskForCrop(master, start) {
   return { name: "追肥", base: start, offset: 24, kind: "care", iconKey: "fertilizing", label: "追肥", description: "株元から少し離して少量ずつ施します。" };
 }
 
-function getAllTasks() {
-  return state.crops.flatMap(tasksForCrop).sort((a, b) => parseDate(a.date) - parseDate(b.date));
+function getAllTasks({ includeRecords = false } = {}) {
+  return state.crops
+    .flatMap(tasksForCrop)
+    .filter((task) => includeRecords || !task.recordOnly)
+    .sort((a, b) => parseDate(a.date) - parseDate(b.date));
 }
 
 function ensureOpenMeteoForecast() {
@@ -1798,7 +2519,7 @@ function getWeatherAlerts() {
   const alerts = [];
   state.crops.forEach((item) => {
     const master = getCrop(item.masterId);
-    const young = ["種まき済み", "苗を植えた", "生育中"].includes(item.status);
+    const young = ["種まき済み", "苗を植えた"].includes(item.status);
     const forecastMin = region.min[monthIndex] + (monthIndex === region.frostEndMonth - 1 ? -3 : 1);
     const forecastMax = region.max[monthIndex] + (monthIndex === region.heatStartMonth - 1 ? 3 : 0);
     const forecastRain = region.rain[monthIndex];
@@ -1883,7 +2604,7 @@ function getOpenMeteoAlerts() {
   const windDay = days.find((day) => day.daysAhead <= 3 && day.wind >= 10);
   state.crops.forEach((item) => {
     const master = getCrop(item.masterId);
-    const young = ["種まき済み", "苗を植えた", "生育中"].includes(item.status);
+    const young = ["種まき済み", "苗を植えた"].includes(item.status);
     if (young && coldDay && coldDay.min <= master.lowTempRisk + 1) {
       alerts.push({
         type: "low",
@@ -2072,14 +2793,20 @@ function getBasicRecommendations() {
   }).sort((a, b) => b.score - a.score);
 }
 
+function monthlyRecommendationNote() {
+  const region = state.premium ? getRegion() : null;
+  const prefix = region ? `${region.climateZoneName}の${formatMonth(today)}` : `${formatMonth(today)}`;
+  return h("div", { class: "aftercrop-note" }, [
+    h("strong", { text: `${prefix}の候補` }),
+    h("span", { text: "種まき・定植しやすい時期と、家庭菜園で扱いやすい作物を優先しています。" })
+  ]);
+}
+
 function recommendationCopy(item, month, seedFit, plantingFit, region) {
-  const timing = seedFit && plantingFit ? "種まき・苗植え" : seedFit ? "種まき" : plantingFit ? "苗植え" : "準備";
-  const locationPrefix = region ? `${region.climateZoneName}の${formatMonth(today)}では` : `${formatMonth(today)}は`;
-  const lead = seedFit || plantingFit
-    ? `${locationPrefix}${timing}の候補です。`
-    : `${locationPrefix}次の適期に向けた候補です。`;
+  const timingLabel = seedFit && plantingFit ? "種まき・定植候補" : seedFit ? "種まき候補" : plantingFit ? "定植候補" : "次の適期に向けて準備";
   return {
-    reason: `${lead}${cropMeritText(item)}`,
+    reason: cropMeritText(item),
+    timingLabel,
     note: cropCareNote(item, region, month)
   };
 }
@@ -2099,7 +2826,22 @@ function cropMeritText(item) {
     komatsuna: "短期間で収穫しやすく、空いた畝を使いやすい葉菜です。",
     turnip: "小カブなら栽培期間が短く、秋冬の一品にしやすい根菜です。",
     daikon: "秋まきの代表的な根菜で、土づくりの成果が形に出やすい作物です。",
-    spinach: "涼しい時期に育てやすく、寒さに当たると味がのりやすい葉菜です。"
+    spinach: "涼しい時期に育てやすく、寒さに当たると味がのりやすい葉菜です。",
+    cauliflower: "涼しい時期に花蕾が締まりやすく、ブロッコリーとは違う収穫の形を楽しめます。",
+    kohlrabi: "丸く太る茎を観察しやすく、短めの期間で収穫の手応えが出ます。",
+    romanesco: "幾何学的な花蕾が育つため、秋冬菜園の観察が楽しい作物です。",
+    "salad-na": "外葉を使いながら育てられ、少量ずつ食卓に出しやすい葉菜です。",
+    "chima-sanchu": "焼肉用の葉として使いやすく、外葉をかき取りながら長く楽しめます。",
+    "mustard-greens": "辛みのある葉を短期間で収穫しやすく、秋冬の味に変化を出せます。",
+    nabana: "寒い時期を越して花芽を収穫でき、春先の楽しみを先に仕込めます。",
+    beets: "根の色づきがわかりやすく、収穫後の料理にも個性が出る根菜です。",
+    "swiss-chard": "葉柄の色が美しく、暑さにも比較的耐えるので長く観察できます。",
+    mitsuba: "半日陰でも扱いやすく、少量の香味野菜を必要な時に摘めます。",
+    molokheiya: "暑さに強く、真夏でも葉を摘み取って使える貴重な葉菜です。",
+    ensai: "高温期に伸びがよく、つる先を摘み取りながら夏の青菜として使えます。",
+    "ice-plant": "粒のような質感が特徴で、乾かしすぎず育てる観察が楽しい葉菜です。",
+    treviso: "赤紫の葉色が出ると見た目にも楽しく、涼しい時期のサラダに向きます。",
+    chijimina: "寒さで葉が縮みやすく、冬の葉菜として味の変化を楽しめます。"
   };
   if (specific[item.id]) return specific[item.id];
   if (item.category === "葉菜類") return "間引きと防虫を早めに行えば、短い期間で育てやすい作物です。";
@@ -2119,7 +2861,22 @@ function cropCareNote(item, region, month) {
     basil: "摘心して枝数を増やし、雨後は蒸れないよう風通しを見ます。",
     pumpkin: "雌花が咲いたら人工受粉を意識し、株元の泥はねを抑えます。",
     corn: "受粉期の水切れと、鳥・虫による食害を早めに確認します。",
-    peanut: "花後に子房柄が土へ入るので、株元を固めすぎないようにします。"
+    peanut: "花後に子房柄が土へ入るので、株元を固めすぎないようにします。",
+    cauliflower: "花蕾が見え始めたら強い日差しを避け、乾燥と虫を早めに確認します。",
+    kohlrabi: "球が若いうちに収穫すると硬くなりにくく、株間を詰めすぎないのがコツです。",
+    romanesco: "生育期間が長めなので、苗の活着後に肥切れしないよう様子を見ます。",
+    "salad-na": "暑い時期はとう立ちしやすいため、涼しい時間帯の水やりを意識します。",
+    "chima-sanchu": "外葉を残して摘むと長く使えますが、真夏は遮光と水切れに注意します。",
+    "mustard-greens": "若い葉ほど食べやすいので、虫よけを早めにして短期収穫を狙います。",
+    nabana: "冬越し前に株を大きくしすぎず、春の花芽が出たら早めに摘みます。",
+    beets: "酸性土と乾燥で育ちにくいため、まく前に土を整え発芽まで湿りを保ちます。",
+    "swiss-chard": "高温期も育ちますが、葉を長く使うなら外葉からこまめに収穫します。",
+    mitsuba: "乾燥が続くと葉が硬くなるため、半日陰と湿り気を保つと扱いやすいです。",
+    molokheiya: "寒さに弱いので十分暖かくなってから始め、若い葉を摘み取ります。",
+    ensai: "水切れすると茎葉が硬くなりやすいので、夏は土の乾きをこまめに見ます。",
+    "ice-plant": "過湿で傷みやすいため、水はけを保ちながら乾燥しすぎないよう管理します。",
+    treviso: "結球・発色には涼しさが大切なので、暑さが残る時期は植え急がないようにします。",
+    chijimina: "秋口の虫を防ぎ、寒さに当たる時期まで株を残すと葉の特徴が出やすいです。"
   };
   if (specific[item.id]) return specific[item.id];
   if (item.family === "アブラナ科") return "虫がつきやすいので、種まき直後から防虫ネットを準備すると安心です。";
@@ -2143,6 +2900,26 @@ function getAfterCropSuggestions(item) {
     .filter((entry) => entry.score > 0)
     .sort((a, b) => b.score - a.score || a.crop.harvestDays[1] - b.crop.harvestDays[1])
     .map(({ crop, reason, action, caution, timing, score, badge }) => ({ crop, reason, action, caution, timing, score, badge }));
+}
+
+function selectAfterCropSuggestions(suggestions, limit) {
+  const selected = [];
+  const familyCounts = new Map();
+  const maxPerFamily = limit <= 3 ? 2 : 3;
+  suggestions.forEach((entry) => {
+    if (selected.length >= limit) return;
+    const family = (entry.crop || entry).family;
+    const count = familyCounts.get(family) || 0;
+    if (count >= maxPerFamily) return;
+    selected.push(entry);
+    familyCounts.set(family, count + 1);
+  });
+  suggestions.forEach((entry) => {
+    if (selected.length >= limit) return;
+    if (selected.includes(entry)) return;
+    selected.push(entry);
+  });
+  return selected.slice(0, limit);
 }
 
 function scoreAfterCropCandidate(previous, candidate, finishDate, finishMonth) {
@@ -2179,11 +2956,8 @@ function afterCropTimingScore(candidate, finishMonth) {
 }
 
 function afterCropAdviceCopy(previous, candidate, finishDate, monthScores) {
-  const familyReason = previous.recommendedNextFamilies.includes(candidate.family)
-    ? `${previous.name}の後は${candidate.family}へ替えると、同じ科を続けない輪作にしやすいです。`
-    : `${previous.name}と違う${candidate.family}なので、同じ科を続けるより土の負担を分けられます。`;
   return {
-    reason: `${familyReason}${afterCropMerit(candidate)}`,
+    reason: afterCropMerit(candidate),
     action: afterCropAction(candidate, finishDate, monthScores),
     caution: afterCropCaution(candidate)
   };
@@ -2198,7 +2972,7 @@ function afterCropMerit(candidate) {
     mibuna: "水菜に近い感覚で育てられ、鍋物や浅漬けにも使いやすい葉菜です。",
     spinach: "涼しい時期ほど育てやすく、寒さに当たると味がのりやすい作物です。",
     lettuce: "苗から始めると管理しやすく、秋の気温で葉がやわらかく育ちます。",
-    "chinese-cabbage": "秋の定植から冬の収穫へつなげやすく、畝を長めに使う計画に向きます。",
+    hakusai: "秋の定植から冬の収穫へつなげやすく、畝を長めに使う計画に向きます。",
     cabbage: "秋冬の定番で、苗から始めると収穫までの見通しを立てやすい作物です。",
     broccoli: "苗から育てやすく、頂花蕾のあと側枝も楽しめる候補です。",
     edamame: "栽培期間が比較的読みやすく、夏の片付け後でも短期収穫を狙いやすい豆類です。",
@@ -2207,7 +2981,22 @@ function afterCropMerit(candidate) {
     garlic: "秋に植えて冬越しさせるので、畝を長く使える場合に向きます。",
     pea: "秋まきで冬越しし、春の収穫につなげる計画に向きます。",
     "fava-bean": "秋まきで株を育て、春の収穫を待つ楽しみがあります。",
-    carrot: "涼しくなる時期の種まきに向き、土づくりの成果が見えやすい根菜です。"
+    carrot: "涼しくなる時期の種まきに向き、土づくりの成果が見えやすい根菜です。",
+    cauliflower: "苗から始める秋冬作として計画しやすく、夏野菜後の畝を冬まで活かせます。",
+    kohlrabi: "短期で片付きやすく、丸く太る茎を楽しめる秋冬向きの候補です。",
+    romanesco: "栽培期間は長めでも、秋から冬の畝をじっくり使う計画に向きます。",
+    "salad-na": "涼しい時期なら短めの期間で収穫でき、空き畝の回転を止めにくい葉菜です。",
+    "chima-sanchu": "外葉を摘みながら使えるので、少ない株でも食卓に回しやすい候補です。",
+    "mustard-greens": "秋まきで立ち上がりが早く、冬前に葉ものを足したい時に向きます。",
+    nabana: "冬越しして春の花芽を楽しめるため、秋の片付け後の長期計画に向きます。",
+    beets: "違う科へ切り替えやすく、秋の涼しさを使って根を太らせる候補です。",
+    "swiss-chard": "色のある葉柄で畝が明るくなり、葉を少しずつ使える後作候補です。",
+    mitsuba: "香味野菜として少ない面積で育てやすく、半日陰の畝にも回しやすい候補です。",
+    molokheiya: "夏前の片付け後なら暑さを活かして葉を伸ばせる、夏向きの後作です。",
+    ensai: "高温期に伸びるため、初夏の空き畝を青菜用に使いたい時に向きます。",
+    "ice-plant": "涼しい時期の管理に向き、ほかの葉菜と違う食感を楽しめる候補です。",
+    treviso: "秋冬の涼しさで葉色が出やすく、畝に彩りを加えられる候補です。",
+    chijimina: "寒さを活かす葉菜で、冬の収穫候補として畝を使いやすいです。"
   };
   if (specific[candidate.id]) return specific[candidate.id];
   if (candidate.category === "葉菜類") return "葉菜は比較的結果が早く、片付け後の畝を使い切りやすい候補です。";
@@ -2236,7 +3025,7 @@ function afterCropCaution(candidate) {
 }
 
 function overwinterCropIds() {
-  return new Set(["garlic", "onion", "pea", "fava-bean", "rakkyo", "strawberry"]);
+  return new Set(["garlic", "onion", "pea", "fava-bean", "rakkyo", "strawberry", "nabana", "treviso", "chijimina"]);
 }
 
 function wrapMonth(month) {
@@ -2307,6 +3096,42 @@ function getCrop(id) {
   return crops.find((item) => item.id === id) || crops[0];
 }
 
+function normalizeCropRecord(item) {
+  const master = getCrop(item.masterId || item.id);
+  const legacyStatuses = new Set(["栽培終了", "収穫中", "生育中"]);
+  let status = item.status || "育てたい";
+  if (!["育てたい", "種まき済み", "苗を植えた"].includes(status) || legacyStatuses.has(status)) {
+    status = item.plantingDate && !directSownOnlyCropIds.has(master.id) ? "苗を植えた" : item.sowDate ? "種まき済み" : "育てたい";
+  }
+  const method = normalizeStartMethod(item.startMethod || inferStartMethod({ ...item, status }, master), master);
+  const nextStatus = method === "nursery" && (status === "苗を植えた" || isIsoDate(item.plantingDate))
+    ? "苗を植えた"
+    : startMethodDefinitions[method].status;
+  const next = { ...item, startMethod: method, status: nextStatus };
+  if (method === "planning") {
+    next.sowDate = "";
+    next.plantingDate = "";
+  } else if (method === "direct") {
+    next.sowDate = isIsoDate(next.sowDate) ? next.sowDate : iso(today);
+    next.plantingDate = "";
+  } else if (method === "nursery") {
+    if (next.status === "種まき済み") {
+      next.sowDate = isIsoDate(next.sowDate) ? next.sowDate : iso(today);
+      next.plantingDate = "";
+    } else {
+      next.plantingDate = isIsoDate(next.plantingDate) ? next.plantingDate : iso(today);
+      next.sowDate = isIsoDate(next.sowDate) ? next.sowDate : "";
+    }
+  } else if (method === "seedling") {
+    next.plantingDate = isIsoDate(next.plantingDate) ? next.plantingDate : iso(today);
+    if (!isIsoDate(next.sowDate)) next.sowDate = "";
+  } else if (method === "material") {
+    next.plantingDate = isIsoDate(next.plantingDate) ? next.plantingDate : isIsoDate(next.sowDate) ? next.sowDate : iso(today);
+    next.sowDate = "";
+  }
+  return next;
+}
+
 function tasksWithin(tasks, days) {
   return tasks.filter((task) => {
     const date = parseDate(task.date);
@@ -2319,7 +3144,14 @@ function needsHilling(master) {
 }
 
 function calcProgress(item) {
-  const master = getCrop(item.masterId);
+  if (!isCropStarted(item)) return 0;
+  const master = getCrop(item.masterId || item.id);
+  if (!isHarvestScheduleReady(item, master) && isIsoDate(item.sowDate)) {
+    const start = parseDate(item.sowDate);
+    const end = addDays(start, nurseryReadyDays(master));
+    const total = Math.max(1, daysBetween(start, end));
+    return Math.max(4, Math.min(100, Math.round((daysBetween(start, today) / total) * 100)));
+  }
   const start = getCropStartDate(item);
   const end = getCropFinishDate(item);
   const total = Math.max(1, daysBetween(start, end));
@@ -2327,12 +3159,44 @@ function calcProgress(item) {
 }
 
 function getCropStartDate(item) {
-  return parseDate(item.plantingDate || item.sowDate || iso(today));
+  return getHarvestSchedule(item).base.date;
 }
 
 function getCropFinishDate(item) {
+  const harvest = getHarvestSchedule(item);
+  return addDays(harvest.base.date, harvest.range[1]);
+}
+
+function getHarvestSchedule(item) {
   const master = getCrop(item.masterId || item.id);
-  return addDays(getCropStartDate(item), master.harvestDays[1]);
+  const base = getCropScheduleBase(item, master);
+  const range = base.kind === "planting" && harvestAfterPlantingDays[master.id]
+    ? harvestAfterPlantingDays[master.id]
+    : master.harvestDays;
+  return { base, range };
+}
+
+function getCropScheduleBase(item, master = getCrop(item.masterId || item.id)) {
+  const usePlanting = usesPlantingDateForSchedule(item, master);
+  const value = usePlanting ? item.plantingDate || item.sowDate : item.sowDate || item.plantingDate;
+  const method = getStartMethod(item, master);
+  return {
+    date: parseDate(value || iso(today)),
+    kind: usePlanting ? "planting" : "sowing",
+    label: usePlanting ? method === "material" ? "植え付け日から" : "定植日から" : "種まき日から"
+  };
+}
+
+function usesPlantingDateForSchedule(item, master) {
+  if (!item?.plantingDate) return false;
+  const method = getStartMethod(item, master);
+  if (method === "planning" || method === "direct") return false;
+  if (method === "nursery" && item.status === "種まき済み") return false;
+  return isPlantingTaskRelevant(master);
+}
+
+function isPlantingTaskRelevant(master) {
+  return plantingMaterialCropIds.has(master.id) || isTransplantMethodAvailable(master);
 }
 
 function greetingText() {
@@ -2344,7 +3208,7 @@ function greetingText() {
 
 function homeSummary(tasks, alerts) {
   if (!state.crops.length) return "作物を追加すると、基本作業予定が自動生成されます。";
-  if (!state.premium) return `今週の作業は${tasks.length}件です。地域・環境に合わせた気象アラートは有料デモで利用できます。`;
+  if (!state.premium) return `今週の作業は${tasks.length}件です。地域に合わせた天気の注意はプレミアムで利用できます。`;
   return `今週の作業は${tasks.length}件、気象アラートは${alerts.length}件です。通知は${notificationLabel(state.notificationMode)}に設定されています。`;
 }
 
@@ -2434,6 +3298,36 @@ function formatDate(value) {
   return `${date.getMonth() + 1}/${date.getDate()}`;
 }
 
+function timingWindowText(months) {
+  if (!months?.length) return "未設定";
+  const sorted = [...new Set(months)].sort((a, b) => a - b);
+  const ranges = [];
+  let start = sorted[0];
+  let prev = sorted[0];
+  sorted.slice(1).forEach((month) => {
+    if (month === prev + 1) {
+      prev = month;
+      return;
+    }
+    ranges.push(start === prev ? `${start}月` : `${start}〜${prev}月`);
+    start = month;
+    prev = month;
+  });
+  ranges.push(start === prev ? `${start}月` : `${start}〜${prev}月`);
+  return ranges.join("、");
+}
+
+function nextTimingDate(months) {
+  const sorted = [...new Set(months || [])].sort((a, b) => a - b);
+  if (!sorted.length) return today;
+  const current = today.getMonth() + 1;
+  const currentYear = today.getFullYear();
+  const month = sorted.find((item) => item >= current) || sorted[0];
+  const year = month >= current ? currentYear : currentYear + 1;
+  if (month === current) return today;
+  return new Date(year, month - 1, 15);
+}
+
 function formatMonth(date) {
   return `${date.getMonth() + 1}月`;
 }
@@ -2455,6 +3349,12 @@ function iso(date) {
 function parseDate(value) {
   const [y, m, d] = value.split("-").map(Number);
   return new Date(y, m - 1, d);
+}
+
+function isIsoDate(value) {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = parseDate(value);
+  return !Number.isNaN(date.getTime());
 }
 
 function startOfDay(date) {
