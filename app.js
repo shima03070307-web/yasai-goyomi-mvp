@@ -451,6 +451,7 @@ let state = loadState();
 let weatherFetchInFlight = "";
 let weatherCacheInFlight = false;
 let weatherCacheAttemptBucket = "";
+let previousView = state.view;
 
 const seasonVisuals = {
   earlySpring: { name: "初春", file: "early-spring.png" },
@@ -680,6 +681,8 @@ function h(tag, attrs = {}, children = []) {
 
 function render() {
   const app = document.querySelector("#app");
+  const viewChanged = state.onboarded && previousView !== state.view;
+  previousView = state.view;
   cleanupBrokenModalBackdrops();
   app.innerHTML = "";
   if (!state.onboarded) {
@@ -696,6 +699,7 @@ function render() {
       state.toast ? h("div", { class: "toast", role: "status", text: state.toast }) : null
     ])
   );
+  if (viewChanged) settleViewPosition(state.view);
 }
 
 function cleanupBrokenModalBackdrops() {
@@ -770,10 +774,12 @@ function renderSidebar() {
   const allTasks = getAllTasks();
   const alerts = getWeatherAlerts();
   const cropLimit = state.premium ? "無制限" : "3 無料枠";
-  return h("aside", { class: "side" }, [
-    h("div", { class: "brand" }, [
+  return h("aside", { class: `side ${state.view === "home" ? "home-side" : "compact-side"}` }, [
+    state.view === "home" ? h("div", { class: "brand side-brand" }, [
       brandMark(),
       h("div", {}, [h("h1", { text: "やさい暦" }), h("p", { text: "家庭菜園サポート" })])
+    ]) : h("div", { class: "side-context", "aria-label": "現在の画面" }, [
+      h("strong", { text: currentViewTitle() })
     ]),
     h("div", { class: "side-meta" }, [
       state.premium ? meta("地域", `${region.prefecture}${region.city || ""}`) : null,
@@ -792,7 +798,12 @@ function renderSidebar() {
 }
 
 function navButton(view, icon, label) {
-  return h("button", { class: state.view === view ? "active" : "", onclick: () => setState({ view }) }, [
+  return h("button", {
+    class: state.view === view ? "active" : "",
+    onclick: () => {
+      if (state.view !== view) setState({ view });
+    }
+  }, [
     navIcon(icon),
     h("span", { text: label })
   ]);
@@ -836,6 +847,17 @@ function uiIcon(name, className = "ui-icon") {
 }
 
 function renderTopbar() {
+  const [title, subtitle] = currentViewCopy();
+  const showAddButton = ["home", "crops", "calendar"].includes(state.view);
+  return h("div", { class: `topbar ${showAddButton ? "with-action" : "compact"}` }, [
+    h("div", { class: "topbar-copy" }, [h("h2", { text: title }), h("p", { class: "muted", text: subtitle })]),
+    showAddButton ? h("div", { class: "top-actions" }, [
+      h("button", { class: "primary-btn add-crop-btn", onclick: () => openCropModal(), "aria-label": "作物を追加" }, [uiIcon("plus"), h("span", { text: "作物を追加" })])
+    ]) : null
+  ]);
+}
+
+function currentViewCopy() {
   const titles = {
     home: ["ホーム", "今日やることと、今週の畑の流れを確認できます。"],
     crops: ["作物管理", "育てたい作物と栽培中の作物を登録します。"],
@@ -843,13 +865,28 @@ function renderTopbar() {
     alerts: state.premium ? ["天気の注意・提案", "登録作物と地域に合わせた注意点を表示します。"] : ["アラート・提案", "地域に合わせた提案はプレミアムで利用できます。"],
     settings: state.premium ? ["設定", "地域、通知、プランを管理します。"] : ["設定", "通知とプランを管理します。"]
   };
-  const [title, subtitle] = titles[state.view];
-  return h("div", { class: "topbar" }, [
-    h("div", {}, [h("h2", { text: title }), h("p", { class: "muted", text: subtitle })]),
-    h("div", { class: "top-actions" }, [
-      h("button", { class: "primary-btn", onclick: () => openCropModal() }, [uiIcon("plus"), "作物を追加"])
-    ])
-  ]);
+  return titles[state.view] || titles.home;
+}
+
+function currentViewTitle() {
+  return currentViewCopy()[0];
+}
+
+function settleViewPosition(view) {
+  const selectors = {
+    home: ".side",
+    crops: ".crop-list, .topbar",
+    calendar: ".calendar-shell, .topbar",
+    alerts: ".panel, .topbar",
+    settings: ".panel, .topbar"
+  };
+  const schedule = window.requestAnimationFrame || ((callback) => window.setTimeout(callback, 0));
+  schedule(() => {
+    const prefersReduced = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    const target = document.querySelector(selectors[view] || ".topbar");
+    if (!target) return;
+    target.scrollIntoView({ behavior: prefersReduced ? "auto" : "smooth", block: "start", inline: "nearest" });
+  });
 }
 
 function renderCurrentView() {
@@ -2407,8 +2444,6 @@ function ensureOpenMeteoForecast() {
 function isWeatherCacheStale() {
   if (!state.weatherCache) return true;
   if (!weatherCacheHasUsableDays(state.weatherCache)) return true;
-  const fetchedStamp = Date.parse(state.weatherCacheFetchedAt || "");
-  if (Number.isFinite(fetchedStamp) && Date.now() - fetchedStamp < 6 * 60 * 60 * 1000) return false;
   const stamp = Date.parse(state.weatherCache.generatedAt || state.weatherCacheFetchedAt || "");
   if (!Number.isFinite(stamp)) return true;
   return Date.now() - stamp > 6 * 60 * 60 * 1000;

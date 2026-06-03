@@ -121,6 +121,18 @@ button {
   margin-bottom: 20px;
 }
 
+.side-context {
+  display: grid;
+  gap: 3px;
+  margin-bottom: 14px;
+  padding: 5px 2px 2px;
+}
+
+.side-context strong {
+  color: var(--green-dark);
+  font-size: 20px;
+}
+
 .brand-mark {
   display: grid;
   place-items: center;
@@ -251,6 +263,7 @@ button {
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 18px;
+  scroll-margin-top: 18px;
 }
 
 .topbar h2 {
@@ -259,11 +272,16 @@ button {
   letter-spacing: 0;
 }
 
+.topbar-copy {
+  min-width: 0;
+}
+
 .top-actions {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
   justify-content: flex-end;
+  flex: 0 0 auto;
 }
 
 .primary-btn,
@@ -282,6 +300,23 @@ button {
   background: var(--green);
   border-color: var(--green);
   color: #fff;
+}
+
+.add-crop-btn {
+  min-width: 148px;
+  min-height: 52px;
+  padding-inline: 18px;
+  white-space: nowrap;
+  border-radius: 8px;
+  font-size: 15px;
+}
+
+.add-crop-btn .ui-icon {
+  flex: 0 0 auto;
+}
+
+.add-crop-btn span:last-child {
+  white-space: nowrap;
 }
 
 .secondary-btn {
@@ -322,6 +357,7 @@ button {
   border-radius: var(--radius);
   box-shadow: 0 8px 24px rgba(51, 70, 38, 0.08);
   padding: 16px;
+  scroll-margin-top: 18px;
 }
 
 .panel-header {
@@ -1481,8 +1517,23 @@ textarea {
     padding: 13px;
   }
 
+  .compact-side {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .compact-side .side-meta {
+    display: none;
+  }
+
   .brand {
     margin-bottom: 8px;
+  }
+
+  .side-context {
+    display: none;
   }
 
   .side-meta {
@@ -1521,7 +1572,6 @@ textarea {
     display: none;
   }
 
-  .topbar,
   .hero,
   .first-setup-card,
   .dashboard-grid,
@@ -1530,11 +1580,20 @@ textarea {
   }
 
   .topbar {
-    align-items: stretch;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 14px;
   }
 
   .top-actions {
-    justify-content: flex-start;
+    justify-content: flex-end;
+  }
+
+  .add-crop-btn {
+    min-width: 132px;
+    min-height: 46px;
+    padding-inline: 13px;
+    font-size: 14px;
   }
 
   .first-setup-actions {
@@ -1577,6 +1636,43 @@ textarea {
 @media (max-width: 640px) {
   .side-meta {
     grid-template-columns: 1fr;
+  }
+
+  .topbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+  }
+
+  .topbar.compact {
+    grid-template-columns: 1fr;
+  }
+
+  .topbar h2 {
+    font-size: 30px;
+    line-height: 1.12;
+  }
+
+  .topbar .muted {
+    font-size: 14px;
+    line-height: 1.55;
+  }
+
+  .add-crop-btn {
+    width: 48px;
+    min-width: 48px;
+    min-height: 48px;
+    padding: 0;
+    border-radius: 12px;
+  }
+
+  .add-crop-btn span:last-child {
+    display: none;
+  }
+
+  .add-crop-btn .ui-icon {
+    width: 24px;
+    height: 24px;
   }
 
   .crop-card,
