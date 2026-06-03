@@ -42,6 +42,3 @@ jobs:
           git push
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
-      - name: Trigger Cloudflare Pages deploy hook
-        if: steps.commit.outputs.changed == 'true' && secrets.CF_PAGES_DEPLOY_HOOK != ''
-        run: curl -fsS -X POST "${{ secrets.CF_PAGES_DEPLOY_HOOK }}"
