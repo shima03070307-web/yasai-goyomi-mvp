@@ -1,5 +1,6 @@
 const STORAGE_KEY = "yasai-goyomi-mvp-state";
 const FEEDBACK_KEY = "yasai-goyomi-feedback";
+const WEATHER_CACHE_VERSION = "weather-auto-3";
 const today = startOfDay(new Date());
 
 const climateZones = {
@@ -267,6 +268,7 @@ const defaultState = {
   weatherError: "",
   weatherCache: null,
   weatherCacheFetchedAt: null,
+  weatherCacheVersion: WEATHER_CACHE_VERSION,
   form: {
     search: "",
     category: "すべて",
@@ -399,6 +401,16 @@ function loadState() {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
     if (!saved) return defaultState;
     const migrated = { ...defaultState, ...saved, form: { ...defaultState.form, ...(saved.form || {}) } };
+    if (saved.weatherCacheVersion !== WEATHER_CACHE_VERSION) {
+      migrated.weatherStatus = "idle";
+      migrated.weatherForecast = null;
+      migrated.weatherFetchedAt = null;
+      migrated.weatherLocationKey = "";
+      migrated.weatherError = "";
+      migrated.weatherCache = null;
+      migrated.weatherCacheFetchedAt = null;
+      migrated.weatherCacheVersion = WEATHER_CACHE_VERSION;
+    }
     const sampleOnly = migrated.crops?.length === 1 && migrated.crops[0].masterId === "mini-tomato" && migrated.crops[0].note === "確認用のサンプル作物";
     if (sampleOnly) {
       migrated.crops = [];
@@ -1700,7 +1712,7 @@ function ensureWeatherCacheLoaded() {
     })
     .then((cache) => {
       weatherCacheInFlight = false;
-      setState({ weatherCache: cache, weatherCacheFetchedAt: new Date().toISOString() });
+      setState({ weatherCache: cache, weatherCacheFetchedAt: new Date().toISOString(), weatherCacheVersion: WEATHER_CACHE_VERSION });
     })
     .catch(() => {
       weatherCacheInFlight = false;
