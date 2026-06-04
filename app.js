@@ -419,7 +419,8 @@ const defaultState = {
   view: "home",
   selectedCropId: null,
   calendarOffset: 0,
-  calendarView: "upcoming",
+  calendarView: "month",
+  selectedCalendarDate: iso(today),
   regionId: "東京都-東京23区",
   prefecture: "東京都",
   city: "東京23区",
@@ -852,7 +853,7 @@ function renderTopbar() {
   return h("div", { class: `topbar ${showAddButton ? "with-action" : "compact"}` }, [
     h("div", { class: "topbar-copy" }, [h("h2", { text: title }), h("p", { class: "muted", text: subtitle })]),
     showAddButton ? h("div", { class: "top-actions" }, [
-      h("button", { class: "primary-btn add-crop-btn", onclick: () => openCropModal(), "aria-label": "作物を追加" }, [uiIcon("plus"), h("span", { text: "作物を追加" })])
+      h("button", { class: "primary-btn add-crop-btn", onclick: () => openCropModal(), "aria-label": "作物を追加する" }, [uiIcon("plus"), h("span", { text: "作物を追加する" })])
     ]) : null
   ]);
 }
@@ -911,7 +912,7 @@ function renderHome() {
     h("section", { class: "grid" }, [
       !state.crops.length ? firstGardenSetupCard() : null,
       h("div", { class: "panel focus-panel" }, [
-        h("div", { class: "panel-header" }, [h("h3", { text: "今日やること" }), h("span", { class: "badge blue", text: `${todayTasks.length}件` })]),
+        h("div", { class: "panel-header" }, [h("h3", { text: "次にやること" }), h("span", { class: "badge blue", text: todayTasks.length ? `今日 ${todayTasks.length}件` : "今週" })]),
         taskList(todayTasks.length ? todayTasks : weekTasks.slice(0, 3), todayTasks.length ? "today" : "week")
       ]),
       h("div", { class: "panel hero" }, [
@@ -1025,8 +1026,8 @@ function renderCropDetail(item) {
     h("h3", { class: "section-title", text: "作業タイムライン" }),
     h("div", { class: "timeline" }, tasks.map((task) => renderTimelineItem(task))),
     isCropStarted(item) ? h("div", { class: "section-title-row" }, [
-      h("h3", { class: "section-title", text: "後作候補（終了予定月から判定）" }),
-      h("span", { class: "badge amber", text: `${formatDate(iso(finishDate))}頃から` })
+      h("h3", { class: "section-title", text: "次に植えやすい候補" }),
+      h("span", { class: "badge amber", text: `${formatMonth(finishDate)}から準備` })
     ]) : h("h3", { class: "section-title", text: "栽培開始の目安" }),
     isCropStarted(item) ? afterCropNote(master, visibleAfter) : renderTimingAdvice(master),
     isCropStarted(item) ? h("div", { class: "recommend-list" }, visibleAfter.map((suggestion) => renderAfterCropCard(master, suggestion))) : null,
@@ -1190,9 +1191,11 @@ function renderAfterCropCard(previous, suggestion) {
     h("div", {}, [
       h("strong", { text: candidate.name }),
       h("span", { class: "recommend-meta", text: `${candidate.family} / ${candidate.category}` }),
-      h("p", { text: suggestion.reason || afterCropMerit(candidate) })
-    ]),
-    h("span", { class: "badge green", text: suggestion.badge || "後作候補" })
+      h("p", { text: suggestion.reason || afterCropMerit(candidate) }),
+      suggestion.action ? h("div", { class: "advice-points compact" }, [
+        h("span", { class: "advice-point", text: suggestion.action })
+      ]) : null
+    ])
   ]);
 }
 
@@ -1224,10 +1227,21 @@ function renderCalendar() {
     const date = parseDate(event.date);
     return date >= today && daysBetween(today, date) <= 7;
   }).sort((a, b) => parseDate(a.date) - parseDate(b.date));
+  const selectedDate = isIsoDate(state.selectedCalendarDate) ? parseDate(state.selectedCalendarDate) : today;
+  const selectedEvents = events
+    .filter((event) => isSameDay(parseDate(event.date), selectedDate))
+    .sort((a, b) => calendarEventPriority(a) - calendarEventPriority(b));
+  const monthEvents = events.filter((event) => {
+    const date = parseDate(event.date);
+    return date.getFullYear() === base.getFullYear() && date.getMonth() === base.getMonth();
+  });
   const children = [
-    h("div", { class: "segmented" }, [
-      h("button", { class: state.calendarView !== "month" ? "active" : "", onclick: () => setState({ calendarView: "upcoming" }) }, ["次の7日"]),
-      h("button", { class: state.calendarView === "month" ? "active" : "", onclick: () => setState({ calendarView: "month" }) }, ["月表示"])
+    h("div", { class: "calendar-toolbar" }, [
+      h("div", { class: "segmented" }, [
+        h("button", { class: state.calendarView !== "month" ? "active" : "", onclick: () => setState({ calendarView: "upcoming" }) }, ["次の7日"]),
+        h("button", { class: state.calendarView === "month" ? "active" : "", onclick: () => setState({ calendarView: "month" }) }, ["月表示"])
+      ]),
+      h("span", { class: "calendar-summary", text: state.calendarView === "month" ? `${formatMonth(base)}の予定 ${monthEvents.length}件` : `次の7日 ${upcoming.length}件` })
     ])
   ];
   if (state.calendarView !== "month") {
@@ -1241,17 +1255,22 @@ function renderCalendar() {
       h("button", { class: "icon-btn", title: "前の月", onclick: () => setState({ calendarOffset: state.calendarOffset - 1 }) }, ["‹"]),
       h("h3", { text: `${base.getFullYear()}年${base.getMonth() + 1}月` }),
       h("div", { style: "display:flex;gap:8px" }, [
-        h("button", { class: "secondary-btn", onclick: () => setState({ calendarOffset: 0 }) }, ["今日"]),
+        h("button", { class: "secondary-btn", onclick: () => setState({ calendarOffset: 0, selectedCalendarDate: iso(today) }) }, ["今日"]),
         h("button", { class: "icon-btn", title: "次の月", onclick: () => setState({ calendarOffset: state.calendarOffset + 1 }) }, ["›"])
       ])
     ]),
-    h("div", { class: "tabs" }, [
-      h("span", { class: "badge green", text: "種まき・定植" }),
-      h("span", { class: "badge violet", text: "追肥・土寄せ" }),
-      h("span", { class: "badge amber", text: "収穫" })
+    h("div", { class: "calendar-legend" }, [
+      h("span", { class: "legend-item seed", text: "種まき・定植" }),
+      h("span", { class: "legend-item care", text: "管理" }),
+      h("span", { class: "legend-item harvest", text: "収穫" })
     ]),
-    h("div", { class: "calendar-grid" }, ["日", "月", "火", "水", "木", "金", "土"].map((w) => h("div", { class: "weekday", text: w }))),
-    h("div", { class: "calendar-grid" }, calendarDays(base).map((date) => renderDay(date, base, events)))
+    h("div", { class: "calendar-month-layout" }, [
+      h("div", { class: "calendar-board" }, [
+        h("div", { class: "calendar-grid weekday-grid" }, ["日", "月", "火", "水", "木", "金", "土"].map((w) => h("div", { class: "weekday", text: w }))),
+        h("div", { class: "calendar-grid month-grid" }, calendarDays(base).map((date) => renderDay(date, base, events, selectedDate)))
+      ]),
+      renderSelectedDayAgenda(selectedDate, selectedEvents)
+    ])
   );
   return h("section", { class: "panel calendar-shell" }, children);
 }
@@ -1259,35 +1278,115 @@ function renderCalendar() {
 function renderUpcomingEvent(event) {
   const isWeather = event.kind === "weather";
   return h("div", { class: `task upcoming ${event.kind || ""}` }, [
-    isWeather ? weatherIcon(weatherIconKeyForAlert(event), "alert-icon weather-alert-icon") : taskIcon(event.iconKey || "growth-check"),
+    calendarEventIcon(event, isWeather),
     h("div", {}, [
       h("div", { class: "task-title", text: event.name }),
       h("p", { class: "task-meta", text: `${formatDate(event.date)} / ${event.cropName || "共通"}` })
-    ]),
-    h("span", { class: `badge ${isWeather ? "blue" : badgeForTask(event.kind)}`, text: isWeather ? "気象" : event.label })
+    ])
   ]);
 }
 
-function renderDay(date, base, events) {
-  const dayEvents = events.filter((event) => isSameDay(parseDate(event.date), date)).slice(0, 3);
+function calendarEventIcon(event, isWeather = event.kind === "weather", className = "calendar-crop-icon") {
+  if (isWeather) return weatherIcon(weatherIconKeyForAlert(event), "alert-icon weather-alert-icon");
+  return event.masterId ? cropIcon(event.masterId, className) : taskIcon(event.iconKey || "growth-check");
+}
+
+function renderDay(date, base, events, selectedDate = today) {
+  const dayEvents = events
+    .filter((event) => isSameDay(parseDate(event.date), date))
+    .sort((a, b) => calendarEventPriority(a) - calendarEventPriority(b));
+  const visibleEvents = dayEvents.slice(0, 2);
   const classes = ["day"];
   if (date.getMonth() !== base.getMonth()) classes.push("out");
   if (isSameDay(date, today)) classes.push("today");
-  return h("div", { class: classes.join(" ") }, [
+  if (isSameDay(date, selectedDate)) classes.push("selected");
+  if (dayEvents.length) classes.push("has-events");
+  return h("button", {
+    class: classes.join(" "),
+    type: "button",
+    "aria-label": `${formatDate(date)} ${dayEvents.length}件`,
+    onclick: () => setState({ selectedCalendarDate: iso(date) })
+  }, [
     h("span", { class: "day-num", text: String(date.getDate()) }),
-    ...dayEvents.map((event) => {
+    h("span", { class: "day-count", text: dayEvents.length ? `${dayEvents.length}` : "" }),
+    ...visibleEvents.map((event) => {
       if (event.kind === "weather") {
         return h("div", { class: `event ${event.kind || ""}` }, [
           weatherIcon(weatherIconKeyForAlert(event), "event-weather-icon"),
-          h("span", { text: `${event.cropName || ""} ${event.name}` })
+          h("span", { text: compactEventTitle(event) })
         ]);
       }
       return h("div", { class: `event ${event.kind || ""}` }, [
-        taskIcon(event.iconKey || "growth-check", "event-task-icon"),
-        h("span", { text: `${event.cropName || ""} ${event.name}` })
+        calendarEventIcon(event, false, "event-crop-icon"),
+        h("span", { text: event.cropName || event.name })
       ]);
-    })
+    }),
+    dayEvents.length > visibleEvents.length ? h("span", { class: "event-more", text: `ほか${dayEvents.length - visibleEvents.length}件` }) : null
   ]);
+}
+
+function renderSelectedDayAgenda(date, events) {
+  const groups = groupCalendarEvents(events);
+  return h("aside", { class: "day-agenda" }, [
+    h("div", { class: "day-agenda-head" }, [
+      h("span", { class: "badge green", text: isSameDay(date, today) ? "今日" : formatDate(date) }),
+      h("strong", { text: groups.length === events.length ? `${events.length}件の予定` : `${groups.length}種類の予定` })
+    ]),
+    h("div", { class: "day-agenda-list" },
+      groups.length ? groups.map(renderCalendarEventGroup) : [empty("この日の作業予定はありません。")]
+    )
+  ]);
+}
+
+function groupCalendarEvents(events) {
+  const groups = new Map();
+  events.forEach((event) => {
+    const key = `${event.date}|${event.kind || "task"}|${event.name}`;
+    if (!groups.has(key)) {
+      groups.set(key, {
+        date: event.date,
+        kind: event.kind,
+        name: event.name,
+        events: [],
+        crops: []
+      });
+    }
+    const group = groups.get(key);
+    group.events.push(event);
+    if (event.kind === "weather") return;
+    const cropId = event.masterId || event.cropName || "common";
+    if (group.crops.some((crop) => crop.id === cropId)) return;
+    group.crops.push({
+      id: cropId,
+      masterId: event.masterId,
+      name: event.cropName || "共通"
+    });
+  });
+  return [...groups.values()];
+}
+
+function renderCalendarEventGroup(group) {
+  if (group.events.length === 1) return renderUpcomingEvent(group.events[0]);
+  const names = group.crops.map((crop) => crop.name).filter(Boolean);
+  return h("div", { class: `task upcoming grouped ${group.kind || ""}` }, [
+    h("div", { class: "calendar-crop-stack" }, [
+      ...group.crops.slice(0, 3).map((crop) => crop.masterId ? cropIcon(crop.masterId, "calendar-crop-icon small") : taskIcon("growth-check")),
+      group.crops.length > 3 ? h("span", { class: "calendar-crop-rest", text: `+${group.crops.length - 3}` }) : null
+    ]),
+    h("div", {}, [
+      h("div", { class: "task-title", text: group.name }),
+      h("p", { class: "task-meta", text: `${formatDate(group.date)} / ${names.join("・") || "共通"}` })
+    ])
+  ]);
+}
+
+function compactEventTitle(event) {
+  return `${event.cropName ? `${event.cropName} ` : ""}${event.name}`;
+}
+
+function calendarEventPriority(event) {
+  const order = { seed: 1, plant: 2, care: 3, harvest: 4, weather: 5 };
+  return order[event.kind] || 9;
 }
 
 function renderAlerts() {
@@ -1324,7 +1423,7 @@ function renderAlerts() {
       h("div", { class: "panel" }, [
         h("div", { class: "panel-header" }, [
           h("h3", { text: "後作提案" }),
-          selected ? h("span", { class: "badge violet", text: `${getCrop(selected.masterId).name} / ${formatMonth(getCropFinishDate(selected))}以降` }) : null
+          selected ? h("span", { class: "badge violet", text: getCrop(selected.masterId).name }) : null
         ]),
         selected ? h("div", {}, [
           afterCropNote(getCrop(selected.masterId), visibleAfter),
@@ -1350,8 +1449,7 @@ function renderRecommendCard(item) {
       item.note ? h("div", { class: "advice-points compact" }, [
         h("span", { class: "advice-point", text: item.note })
       ]) : null
-    ]),
-    h("div", { class: "recommend-score", text: String(item.score) })
+    ])
   ]);
 }
 
@@ -2170,6 +2268,7 @@ function tasksForCrop(item) {
     .map((task) => ({
       id: `${item.id}-${task.name}`,
       cropId: item.id,
+      masterId: master.id,
       cropName: master.name,
       date: iso(addDays(task.base, task.offset)),
       ...task
@@ -2191,6 +2290,7 @@ function nurseryStageTasks(item, master) {
   return templates.map((task) => ({
     id: `${item.id}-${task.name}`,
     cropId: item.id,
+    masterId: master.id,
     cropName: master.name,
     date: iso(addDays(task.base, task.offset)),
     ...task
@@ -2245,6 +2345,7 @@ function plannedStartTasks(item, master) {
     tasks.push({
       id: `${item.id}-${plantingNoun(master)}適期`,
       cropId: item.id,
+      masterId: master.id,
       cropName: master.name,
       date: iso(plantDate),
       name: `${plantingNoun(master)}適期`,
@@ -2260,6 +2361,7 @@ function plannedStartTasks(item, master) {
     tasks.push({
       id: `${item.id}-種まき適期`,
       cropId: item.id,
+      masterId: master.id,
       cropName: master.name,
       date: iso(seedDate),
       name: "種まき適期",
@@ -2274,6 +2376,7 @@ function plannedStartTasks(item, master) {
     tasks.push({
       id: `${item.id}-苗の定植適期`,
       cropId: item.id,
+      masterId: master.id,
       cropName: master.name,
       date: iso(plantDate),
       name: "苗の定植適期",
@@ -2934,7 +3037,7 @@ function getAfterCropSuggestions(item) {
     .map((candidate) => scoreAfterCropCandidate(previous, candidate, finishDate, finishMonth))
     .filter((entry) => entry.score > 0)
     .sort((a, b) => b.score - a.score || a.crop.harvestDays[1] - b.crop.harvestDays[1])
-    .map(({ crop, reason, action, caution, timing, score, badge }) => ({ crop, reason, action, caution, timing, score, badge }));
+    .map(({ crop, reason, action, caution, timing, score }) => ({ crop, reason, action, caution, timing, score }));
 }
 
 function selectAfterCropSuggestions(suggestions, limit) {
@@ -2975,8 +3078,7 @@ function scoreAfterCropCandidate(previous, candidate, finishDate, finishMonth) {
   return {
     crop: candidate,
     score: Math.max(1, score),
-    ...copy,
-    badge: `${monthScores.month || finishMonth}月以降`
+    ...copy
   };
 }
 
@@ -3243,8 +3345,8 @@ function greetingText() {
 
 function homeSummary(tasks, alerts) {
   if (!state.crops.length) return "作物を追加すると、基本作業予定が自動生成されます。";
-  if (!state.premium) return `今週の作業は${tasks.length}件です。地域に合わせた天気の注意はプレミアムで利用できます。`;
-  return `今週の作業は${tasks.length}件、気象アラートは${alerts.length}件です。通知は${notificationLabel(state.notificationMode)}に設定されています。`;
+  if (!state.premium) return `今週の作業は${tasks.length}件です。近い予定から確認しましょう。`;
+  return `今週の作業は${tasks.length}件、気象アラートは${alerts.length}件です。まず近い予定から確認しましょう。`;
 }
 
 function notificationLabel(mode) {
