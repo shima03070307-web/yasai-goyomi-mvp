@@ -1101,23 +1101,24 @@ function cropStartActionButtons(item, master, method = getStartMethod(item, mast
 
 function renderTimingAdvice(master) {
   const methods = allowedStartMethods(master).filter((option) => option.value !== "planning");
+  const region = activeTimingRegion();
   const cards = [];
   if (methods.some((option) => ["direct", "nursery"].includes(option.value))) {
     cards.push(h("div", {}, [
       h("span", { class: "muted", text: methods.some((option) => option.value === "nursery") ? "種まき・育苗開始の適期" : "種まき適期" }),
-      h("strong", { text: timingWindowText(master.seedMonths) })
+      h("strong", { text: timingWindowDisplay(master.seedMonths, "seed", region) })
     ]));
   }
   if (methods.some((option) => option.value === "seedling" || option.value === "nursery")) {
     cards.push(h("div", {}, [
       h("span", { class: "muted", text: "苗の定植適期" }),
-      h("strong", { text: timingWindowText(master.plantingMonths) })
+      h("strong", { text: timingWindowDisplay(master.plantingMonths, "plant", region) })
     ]));
   }
   if (methods.some((option) => option.value === "material")) {
     cards.push(h("div", {}, [
       h("span", { class: "muted", text: `${plantingNoun(master)}の適期` }),
-      h("strong", { text: timingWindowText(master.plantingMonths?.length ? master.plantingMonths : master.seedMonths) })
+      h("strong", { text: timingWindowDisplay(master.plantingMonths?.length ? master.plantingMonths : master.seedMonths, "material", region) })
     ]));
   }
   return h("div", { class: "timing-advice" }, cards);
@@ -1136,12 +1137,13 @@ function cropPhaseLabel(item, master = getCrop(item.masterId)) {
 function cropDateSummary(item, master = getCrop(item.masterId)) {
   const method = getStartMethod(item, master);
   if (item.status === "育てたい") {
+    const region = activeTimingRegion();
     if (plantingMaterialCropIds.has(master.id)) {
-      const plant = nextTimingDate(master.plantingMonths?.length ? master.plantingMonths : master.seedMonths);
+      const plant = nextTimingDateFor(master.plantingMonths?.length ? master.plantingMonths : master.seedMonths, "material", region);
       return `${plantingNoun(master)} ${formatDate(plant)}頃`;
     }
-    const seed = master.seedMonths?.length ? nextTimingDate(master.seedMonths) : null;
-    const plant = isTransplantMethodAvailable(master) ? nextTimingDate(master.plantingMonths) : null;
+    const seed = master.seedMonths?.length ? nextTimingDateFor(master.seedMonths, "seed", region) : null;
+    const plant = isTransplantMethodAvailable(master) ? nextTimingDateFor(master.plantingMonths, "plant", region) : null;
     if (seed && plant) return `種まき ${formatDate(seed)}頃 / 定植 ${formatDate(plant)}頃`;
     if (plant) return `定植 ${formatDate(plant)}頃`;
     if (seed) return `種まき ${formatDate(seed)}頃`;
@@ -2340,8 +2342,10 @@ function materialStageTemplates(master, planting, harvest, plantTaskName, plantT
 function plannedStartTasks(item, master) {
   const tasks = [];
   const methods = allowedStartMethods(master).map((option) => option.value);
+  const region = activeTimingRegion();
   if (methods.includes("material")) {
-    const plantDate = nextTimingDate(master.plantingMonths?.length ? master.plantingMonths : master.seedMonths);
+    const plantMonths = master.plantingMonths?.length ? master.plantingMonths : master.seedMonths;
+    const plantDate = nextTimingDateFor(plantMonths, "material", region);
     tasks.push({
       id: `${item.id}-${plantingNoun(master)}適期`,
       cropId: item.id,
@@ -2352,12 +2356,12 @@ function plannedStartTasks(item, master) {
       kind: "plant",
       iconKey: "planting",
       label: "植え付け",
-      description: `${master.name}は${materialKindDescription(master)}から始める作物です。${timingWindowText(master.plantingMonths?.length ? master.plantingMonths : master.seedMonths)}を目安に植え付けます。`
+      description: `${master.name}は${materialKindDescription(master)}から始める作物です。${timingWindowDisplay(plantMonths, "material", region)}を目安に植え付けます。`
     });
     return tasks.sort((a, b) => parseDate(a.date) - parseDate(b.date));
   }
   if (master.seedMonths?.length && methods.some((method) => ["direct", "nursery"].includes(method))) {
-    const seedDate = nextTimingDate(master.seedMonths);
+    const seedDate = nextTimingDateFor(master.seedMonths, "seed", region);
     tasks.push({
       id: `${item.id}-種まき適期`,
       cropId: item.id,
@@ -2368,11 +2372,11 @@ function plannedStartTasks(item, master) {
       kind: "seed",
       iconKey: "sowing",
       label: "種まき",
-      description: `${master.name}を種から始めるなら、${timingWindowText(master.seedMonths)}が目安です。`
+      description: `${master.name}を種から始めるなら、${timingWindowDisplay(master.seedMonths, "seed", region)}が目安です。`
     });
   }
   if (methods.some((method) => ["nursery", "seedling"].includes(method)) && master.plantingMonths?.length) {
-    const plantDate = nextTimingDate(master.plantingMonths);
+    const plantDate = nextTimingDateFor(master.plantingMonths, "plant", region);
     tasks.push({
       id: `${item.id}-苗の定植適期`,
       cropId: item.id,
@@ -2383,7 +2387,7 @@ function plannedStartTasks(item, master) {
       kind: "plant",
       iconKey: "planting",
       label: "定植",
-      description: `${master.name}を苗から始めるなら、${timingWindowText(master.plantingMonths)}が目安です。`
+      description: `${master.name}を苗から始めるなら、${timingWindowDisplay(master.plantingMonths, "plant", region)}が目安です。`
     });
   }
   return tasks.sort((a, b) => parseDate(a.date) - parseDate(b.date));
@@ -2901,8 +2905,8 @@ function getRecommendations() {
   const month = today.getMonth() + 1;
   return crops.map((item) => {
     let score = 50;
-    const seedFit = isAdjustedMonthInWindow(month, item.seedMonths, region.springAdjustmentDays);
-    const plantingFit = isAdjustedMonthInWindow(month, item.plantingMonths, region.plantingAdjustmentDays);
+    const seedFit = isRegionAdjustedMonthInWindow(month, item.seedMonths, "seed", region);
+    const plantingFit = isRegionAdjustedMonthInWindow(month, item.plantingMonths, "plant", region);
     if (seedFit || plantingFit) score += 25;
     if (item.beginnerFriendly) score += 10;
     if (item.weeklyCareLevel === "週1回") score += 8;
@@ -2936,7 +2940,7 @@ function monthlyRecommendationNote() {
   const prefix = region ? `${region.climateZoneName}の${formatMonth(today)}` : `${formatMonth(today)}`;
   return h("div", { class: "aftercrop-note" }, [
     h("strong", { text: `${prefix}の候補` }),
-    h("span", { text: "種まき・定植しやすい時期と、家庭菜園で扱いやすい作物を優先しています。" })
+    h("span", { text: region ? `${region.regionGroupName}の気候補正をかけ、種まき・定植しやすい作物を優先しています。` : "種まき・定植しやすい時期と、家庭菜園で扱いやすい作物を優先しています。" })
   ]);
 }
 
@@ -3030,11 +3034,12 @@ function getAfterCropSuggestions(item) {
   const previous = getCrop(item.masterId || item.id);
   const finishDate = getCropFinishDate(item);
   const finishMonth = finishDate.getMonth() + 1;
+  const region = activeTimingRegion();
   return crops
     .filter((candidate) => candidate.id !== previous.id)
     .filter((candidate) => candidate.family !== previous.family)
     .filter((candidate) => !previous.avoidNextFamilies.includes(candidate.family))
-    .map((candidate) => scoreAfterCropCandidate(previous, candidate, finishDate, finishMonth))
+    .map((candidate) => scoreAfterCropCandidate(previous, candidate, finishDate, finishMonth, region))
     .filter((entry) => entry.score > 0)
     .sort((a, b) => b.score - a.score || a.crop.harvestDays[1] - b.crop.harvestDays[1])
     .map(({ crop, reason, action, caution, timing, score }) => ({ crop, reason, action, caution, timing, score }));
@@ -3060,8 +3065,8 @@ function selectAfterCropSuggestions(suggestions, limit) {
   return selected.slice(0, limit);
 }
 
-function scoreAfterCropCandidate(previous, candidate, finishDate, finishMonth) {
-  const monthScores = afterCropTimingScore(candidate, finishMonth);
+function scoreAfterCropCandidate(previous, candidate, finishDate, finishMonth, region = null) {
+  const monthScores = afterCropTimingScore(candidate, finishMonth, region);
   let score = monthScores.score;
   if (!score) return { crop: candidate, score: 0, reason: "", timing: "" };
   if (previous.recommendedNextFamilies.includes(candidate.family)) score += 18;
@@ -3082,10 +3087,13 @@ function scoreAfterCropCandidate(previous, candidate, finishDate, finishMonth) {
   };
 }
 
-function afterCropTimingScore(candidate, finishMonth) {
+function afterCropTimingScore(candidate, finishMonth, region = null) {
   const nextMonth = wrapMonth(finishMonth + 1);
   const secondMonth = wrapMonth(finishMonth + 2);
-  const months = [...new Set([...candidate.seedMonths, ...candidate.plantingMonths])];
+  const months = [...new Set([
+    ...timingMonthsForRegion(candidate.seedMonths, "seed", region),
+    ...timingMonthsForRegion(candidate.plantingMonths, "plant", region)
+  ])];
   if (months.includes(finishMonth)) return { score: 45, month: finishMonth, stage: "now" };
   if (months.includes(nextMonth)) return { score: 38, month: nextMonth, stage: "next" };
   if (months.includes(secondMonth)) return { score: 24, month: secondMonth, stage: "prepare" };
@@ -3169,6 +3177,10 @@ function wrapMonth(month) {
   return ((month - 1) % 12) + 1;
 }
 
+function activeTimingRegion() {
+  return state.premium ? getRegion() : null;
+}
+
 function getRegion() {
   return resolveRegionFromLocation(state.prefecture || "東京都", state.city || "");
 }
@@ -3223,10 +3235,34 @@ function normalizeLocationText(text) {
   return String(text || "").replace(/[ 　]/g, "").replace(/東京都23区/g, "東京23区");
 }
 
-function isAdjustedMonthInWindow(month, months, adjustmentDays) {
-  const shifted = addDays(new Date(today.getFullYear(), month - 1, 15), -adjustmentDays);
-  const adjustedMonth = shifted.getMonth() + 1;
-  return months.includes(adjustedMonth);
+function timingAdjustmentDaysForMonth(month, kind, region) {
+  if (!region) return 0;
+  if (month >= 7 && month <= 11) return region.autumnAdjustmentDays || 0;
+  if (kind === "plant" || kind === "material") return region.plantingAdjustmentDays || 0;
+  return region.springAdjustmentDays || 0;
+}
+
+function timingMonthsForRegion(months, kind = "seed", region = activeTimingRegion()) {
+  const base = [...new Set(months || [])].sort((a, b) => a - b);
+  if (!region) return base;
+  return [...new Set(base.map((month) => {
+    const shifted = addDays(new Date(today.getFullYear(), month - 1, 15), timingAdjustmentDaysForMonth(month, kind, region));
+    return shifted.getMonth() + 1;
+  }))].sort((a, b) => a - b);
+}
+
+function isRegionAdjustedMonthInWindow(month, months, kind = "seed", region = activeTimingRegion()) {
+  return timingMonthsForRegion(months, kind, region).includes(month);
+}
+
+function timingWindowDisplay(months, kind = "seed", region = activeTimingRegion()) {
+  const adjusted = timingWindowText(timingMonthsForRegion(months, kind, region));
+  if (!region) return adjusted;
+  return `${adjusted}（${region.city || region.climateZoneName}の目安）`;
+}
+
+function nextTimingDateFor(months, kind = "seed", region = activeTimingRegion()) {
+  return nextTimingDate(timingMonthsForRegion(months, kind, region));
 }
 
 function getCrop(id) {
